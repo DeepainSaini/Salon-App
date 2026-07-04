@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Salon Services</title>
+    <link rel="stylesheet" href="/css/salonServices.css">
+</head>
+<body>
+
+    <div class="page-container">
+
+        <section class="salon-info">
+            <h1 id="salon-name"></h1>
+            <p id="salon-description"></p>
+
+            <div class="salon-meta">
+                <p><strong>Address:</strong> <span id="salon-address"></span></p>
+                <p><strong>City:</strong> <span id="salon-city"></span></p>
+                <p><strong>Phone:</strong> <span id="salon-phone"></span></p>
+                <p><strong>Timing:</strong> <span id="salon-timing"></span></p>
+            </div>
+        </section>
+
+        <section class="services-section">
+            <h2>Available Services</h2>
+
+            <div id="services-list" class="services-list">
+                <!-- services will load here -->
+            </div>
+        </section>
+
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/1.9.0/axios.min.js"></script>
+    <script src="/js/salonServices.js"></script>
+</body>
+</html>

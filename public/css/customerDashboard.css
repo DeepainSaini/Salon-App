@@ -1,0 +1,86 @@
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background-color: #f4f6f8;
+    color: #222;
+}
+
+.dashboard-container {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 25px;
+}
+
+.dashboard-header,
+section {
+    background-color: white;
+    padding: 20px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+}
+
+.dashboard-header h1,
+h2 {
+    margin-top: 0;
+}
+
+.dashboard-header p {
+    color: #666;
+    margin-bottom: 0;
+}
+
+.services-list,
+.appointments-list {
+    margin-top: 15px;
+}
+
+.service-card,
+.appointment-card {
+    border: 1px solid #ddd;
+    padding: 15px;
+    border-radius: 6px;
+    margin-bottom: 12px;
+}
+
+.service-card h3,
+.appointment-card h3 {
+    margin-top: 0;
+}
+
+.service-card p,
+.appointment-card p {
+    margin: 6px 0;
+    color: #444;
+}
+
+button {
+    margin-top: 10px;
+    padding: 10px 15px;
+    background-color: #2563eb;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+button:hover {
+    background-color: #1d4ed8;
+}
+
+.empty-message {
+    border: 1px dashed #bbb;
+    padding: 20px;
+    border-radius: 6px;
+    color: #777;
+    text-align: center;
+}
+
+@media (max-width: 600px) {
+    .dashboard-container {
+        padding: 15px;
+    }
+
+    button {
+        width: 100%;
+    }
+}

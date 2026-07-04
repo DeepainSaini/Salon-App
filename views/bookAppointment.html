@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Book Appointment</title>
+    <link rel="stylesheet" href="/css/bookAppointment.css">
+</head>
+<body>
+
+    <div class="booking-container">
+        <h1>Book Appointment</h1>
+
+        <div class="form-box">
+            <label>Select Date</label>
+            <input type="date" id="appointment-date" required>
+
+            <button id="check-slots-btn">Check Available Slots</button>
+        </div>
+
+        <section class="slots-section">
+            <h2>Available Slots</h2>
+            <div id="slots-list" class="slots-list">
+                <!-- slots will load here -->
+            </div>
+        </section>
+
+        <p id="message"></p>
+    </div>
+
+    <script src="https://sdk.cashfree.com/js/v3/cashfree.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/1.9.0/axios.min.js"></script>
+    <script src="/js/bookAppointment.js"></script>
+</body>
+</html>

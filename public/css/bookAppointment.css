@@ -1,0 +1,76 @@
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background-color: #f4f6f8;
+    color: #222;
+}
+
+.booking-container {
+    max-width: 700px;
+    margin: 40px auto;
+    background-color: white;
+    padding: 25px;
+    border-radius: 8px;
+}
+
+h1,
+h2 {
+    margin-top: 0;
+}
+
+.form-box {
+    margin-bottom: 20px;
+}
+
+label {
+    display: block;
+    font-weight: bold;
+    margin-bottom: 8px;
+}
+
+input {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+}
+
+button {
+    margin-top: 12px;
+    padding: 10px 15px;
+    background-color: #2563eb;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+button:hover {
+    background-color: #1d4ed8;
+}
+
+.slots-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.slot-btn {
+    background-color: #16a34a;
+}
+
+.slot-btn:hover {
+    background-color: #15803d;
+}
+
+.empty-message {
+    color: #777;
+    border: 1px dashed #bbb;
+    padding: 15px;
+    border-radius: 6px;
+}
+
+#message {
+    margin-top: 15px;
+    font-weight: bold;
+}

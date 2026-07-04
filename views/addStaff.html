@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Add Staff</title>
+    <link rel="stylesheet" href="/css/addStaff.css">
+</head>
+<body>
+
+    <div class="form-container">
+        <h2>Add Staff Member</h2>
+
+        <form id="add-staff-form">
+            <label>Name</label>
+            <input type="text" name="name" required>
+
+            <label>Phone</label>
+            <input type="text" name="phone" required>
+
+            <label>Email</label>
+            <input type="email" name="email" required>
+
+            <label>Specialization</label>
+            <input type="text" name="specialization" required>
+
+            <label>Assign Service</label>
+            <select name="serviceId" id="serviceId" required>
+                
+            </select>
+
+            <label>Available From</label>
+            <input type="time" name="available_from" id="available_from" required>
+
+            <label>Available To</label>
+            <input type="time" name="available_to" id="available_to" required>
+
+            <button type="submit">Add Staff</button>
+        </form>
+
+        <p id="message"></p>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/1.9.0/axios.min.js"></script>
+    <script src="/js/addStaff.js"></script>
+</body>
+</html>

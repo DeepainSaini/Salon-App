@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard</title>
+    <link rel="stylesheet" href="/css/adminDashboard.css">
+</head>
+<body>
+
+    <div class="dashboard-container">
+
+        <header>
+            <h1>Admin Dashboard</h1>
+            <p>Manage your salon, services, staff and appointments</p>
+        </header>
+
+        <section class="salon-card">
+            <h2>Salon Details</h2>
+
+            <div id="salon-details" class="details">
+                
+            </div>
+        </section>
+
+        <section class="services-section">
+            <div class="section-title">
+                <h2>Services</h2>
+                <button id="add-service-btn">Add Service</button>
+            </div>
+
+            <div id="services-list" class="list-box">
+                
+            </div>
+        </section>
+
+          <section class="staff-section">
+            <div class="section-title">
+                <h2>Staff</h2>
+                <button id="add-staff-btn">Add Staff</button>
+            </div>
+
+            <div id="staff-list" class="empty-box">
+                <p>No staff added yet.</p>
+            </div>
+        </section>
+
+        <section class="appointments-section">
+            <h2>Appointments</h2>
+
+            <div id="appointments-list" class="appointments-list">
+                <p>No appointments yet.</p>
+            </div>
+        </section>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/1.9.0/axios.min.js"></script>
+    <script src="/js/adminDashboard.js"></script>
+</body>
+</html>

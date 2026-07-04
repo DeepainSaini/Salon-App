@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Adding Services</title>
+    <link rel="stylesheet" href="/css/addServices.css"> 
+</head>
+<body>
+    
+    <div id="container-1">
+        <h1>Add Service Details</h1>
+
+        <form id="servicesForm">
+            <label>Service Name
+                <input type="text" id="service_name" name="service_name" required placeholder="e.g. Basic Haircut">
+            </label>
+            <label>Description
+                <input type="text" id="service_description" name="service_description" required placeholder="elaborate the service details here:">
+            </label>
+            <label>Price (₹)
+                <input type="number" id="service_price" name="service_price" required placeholder="500">
+            </label>
+            <label>Duration (Minutes)
+                <select id="service_duration" name="service_duration">
+                    <option value="15">15 mins</option>
+                    <option value="30" selected>30 mins</option>
+                    <option value="45">45 mins</option>
+                    <option value="60">60 mins</option>
+                </select>
+            </label>
+
+            <button type="submit" id="submit-btn">Add Service</button>
+        </form>
+    </div>
+
+   <script src="/js/addServices.js"></script> 
+   <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/1.9.0/axios.min.js"></script>
+</body>
+</html>

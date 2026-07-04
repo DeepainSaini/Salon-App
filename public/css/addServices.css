@@ -1,0 +1,79 @@
+/* Reset basic margins and set a clean font */
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #f4f7f6;
+    margin: 0;
+    padding: 20px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 90vh;
+}
+
+/* Container styling */
+#container-1 {
+    background-color: #ffffff;
+    padding: 30px;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    width: 100%;
+    max-width: 400px;
+}
+
+/* Heading */
+h1 {
+    margin-top: 0;
+    margin-bottom: 24px;
+    color: #333333;
+    font-size: 24px;
+    text-align: center;
+}
+
+/* Stack labels and inputs vertically */
+#servicesForm label {
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 16px;
+    color: #555555;
+    font-weight: 600;
+    font-size: 14px;
+    gap: 6px; /* Space between text and input */
+}
+
+/* Style inputs and select dropdowns */
+#servicesForm input,
+#servicesForm select {
+    padding: 10px;
+    border: 1px solid #cccccc;
+    border-radius: 4px;
+    font-size: 15px;
+    color: #333333;
+    outline: none;
+    transition: border-color 0.2s;
+}
+
+/* Highlight inputs on focus */
+#servicesForm input:focus,
+#servicesForm select:focus {
+    border-color: #007bff;
+}
+
+/* Submit button styling */
+#submit-btn {
+    width: 100%;
+    padding: 12px;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    margin-top: 8px;
+}
+
+/* Button hover effect */
+#submit-btn:hover {
+    background-color: #0056b3;
+}
