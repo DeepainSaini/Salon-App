@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Leave Review</title>
+  <link rel="stylesheet" href="/css/review.css">
+</head>
+<body>
+
+  <main class="review-container">
+    <h1>Leave a Review</h1>
+
+    <form id="review-form">
+      <label for="rating">Rating</label>
+
+      <select id="rating" name="rating" required>
+        <option value="">Select rating</option>
+        <option value="1">1 Star</option>
+        <option value="2">2 Stars</option>
+        <option value="3">3 Stars</option>
+        <option value="4">4 Stars</option>
+        <option value="5">5 Stars</option>
+      </select>
+
+      <label for="comment">Your Feedback</label>
+
+      <textarea
+        id="comment"
+        name="comment"
+        rows="5"
+        placeholder="Write your feedback"
+        required>
+      </textarea>
+
+      <button type="submit">
+        Submit Review
+      </button>
+    </form>
+
+    <p id="review-message"></p>
+  </main>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/1.9.0/axios.min.js"></script>
+  <script src="/js/review.js"></script>
+</body>
+</html>

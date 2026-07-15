@@ -1,8 +1,8 @@
 const path = require('path');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
-const {Users,Salons,Services,Staff,Appointments} = require('../models');
-const {Sequelize,DataTypes, where} = require('sequelize');
+const {Users,Salons,Services,Staff,Appointments,Reviews} = require('../models');
+const {Sequelize,DataTypes, where,Op} = require('sequelize');
 const { sequelize } = require('../models');
 
 const getAdminDetailsForm = async (req,res) => {
@@ -43,12 +43,17 @@ const getAdminDashboardData = async (req,res) => {
 
         const appointments = await Appointments.findAll({
             where: {
-                salonId: salon.id
+                salonId: salon.id,
+                status: {
+                    [Op.in]: ['booked', 'completed', 'cancelled']
+                },
+                paymentStatus: 'paid'
             },
             include: [
                 { model: Users, as: 'customer' },
                 { model: Services, as: 'service' },
-                { model: Staff, as: 'staff' }
+                { model: Staff, as: 'staff' },
+                { model: Reviews, as: 'review', required: false}
             ],
             order: [['appointment_date', 'ASC'], ['appointment_time', 'ASC']]
         });
@@ -188,7 +193,8 @@ const changeServiceStatus = async (req,res) => {
 
         service.is_active = !service.is_active;
 
-        await service.save();
+        await service.save({transaction : t});
+        await t.commit();
 
         res.status(200).json({
             message: "service status updated",
@@ -197,7 +203,7 @@ const changeServiceStatus = async (req,res) => {
 
     } catch (error) {
         console.log("ERROR UPDATING SERVICE STATUS ---> ", error);
-
+        await t.rollback();
         res.status(500).json({
             message: "something went wrong"
         });
@@ -248,6 +254,8 @@ const getDataForStaffForm = async (req, res) => {
 };
 
 const postAddStaff = async (req, res) => {
+    
+    const t = await sequelize.transaction();
     try {
         const {name,phone,email,specialization,available_from,available_to,serviceId} = req.body;
 
@@ -301,18 +309,119 @@ const postAddStaff = async (req, res) => {
             available_to: available_to,
             salonId: salon.id,
             serviceId: service.id
-        });
-
+        },{transaction: t});
+        
+        await t.commit();
         res.status(201).json({
             message: "staff added successfully"
         });
 
     } catch (error) {
         console.log("ERROR ADDING STAFF ---> ", error);
+        await t.rollback();
         res.status(500).json({
             message: "something went wrong"
         });
     }
+};
+
+const markAppointmentCompleted = async (req, res) => {
+    
+    const t = await sequelize.transaction();
+
+    try {
+        
+        const salon = await Salons.findOne({
+            where: {
+                adminId: req.user.id
+            }
+        });
+
+        if (!salon) {
+            return res.status(404).json({message: 'Salon not found'});
+        }
+
+        const appointment = await Appointments.findOne({
+            where: {
+                id: req.params.id,
+                salonId: salon.id,
+                status: 'booked',
+                paymentStatus: 'paid'
+            }
+        });
+
+        if (!appointment) {
+            return res.status(404).json({message: 'Paid booked appointment not found'});
+        }
+
+        appointment.status = 'completed';
+
+        await appointment.save({transaction: t});
+        await t.commit();
+
+        res.status(200).json({message: 'Appointment marked as completed',appointment});
+
+    } catch (error) {
+        console.log('ERROR MARKING APPOINTMENT COMPLETED --->',error);
+        await t.rollback();
+        res.status(500).json({message: 'Could not mark appointment as completed'});
+    }
+};
+
+const respondToReview = async (req, res) => {
+  
+    const t = await sequelize.transaction();
+
+    try {
+    const { id } = req.params;
+    const { staffResponse } = req.body;
+
+    if (!staffResponse || !staffResponse.trim()) {
+      return res.status(400).json({message: 'Response is required'});
+    }
+
+    const salon = await Salons.findOne({
+      where: {
+        adminId: req.user.id
+      }
+    });
+
+    if (!salon) {
+      return res.status(404).json({message: 'Salon not found'});
+    }
+
+    const review = await Reviews.findOne({
+      where: {
+        id
+      },
+      include: [
+        {
+          model: Appointments,
+          as: 'appointment',
+          where: {
+            salonId: salon.id
+          }
+        }
+      ]
+    });
+
+    if (!review) {
+      return res.status(404).json({message: 'Review not found'});
+    }
+
+    review.staffResponse = staffResponse.trim();
+    review.respondedAt = new Date();
+     
+    await review.save({transaction : t});
+    await t.commit();
+
+    res.json({message: 'Response added successfully',review});
+
+  } catch (error) {
+    console.log('ERROR RESPONDING TO REVIEW --->', error);
+
+    res.status(500).json({message: 'Could not respond to review'});
+  }
 };
 
 module.exports = {
@@ -325,5 +434,7 @@ module.exports = {
     changeServiceStatus,
     getAddStaffForm,
     getDataForStaffForm,
-    postAddStaff
+    postAddStaff,
+    markAppointmentCompleted,
+    respondToReview
 }

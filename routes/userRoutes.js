@@ -19,6 +19,10 @@ router.get('/available-slots',userAuthentication.authenticate,bookingController.
 router.post('/bookAppointment',userAuthentication.authenticate,bookingController.postBookAppointment);
 router.get('/my-appointments',userAuthentication.authenticate,userController.getMyAppointments);
 router.patch('/appointments/:id/cancel',userAuthentication.authenticate,userController.cancelAppointment);
+router.patch('/appointments/reschedule',userAuthentication.authenticate,bookingController.rescheduleAppointment);
+router.get('/review',userAuthentication.authenticate,userController.getReviewForm);
+router.post('/review',userAuthentication.authenticate,userController.postReview);
+router.post('/logout', userAuthentication.authenticate,userController.logout);
 
 
 module.exports = router;

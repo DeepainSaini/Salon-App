@@ -2,7 +2,7 @@ const path = require('path');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const {Users,Salons,Services,Staff,Appointments} = require('../models');
-const {Sequelize,DataTypes, where} = require('sequelize');
+const {Sequelize,DataTypes, where, Transaction} = require('sequelize');
 const { Op } = require('sequelize');
 const { sequelize } = require('../models');
 const { sendBookingConfirmationEmail } = require('../util/services/emailServices');
@@ -33,7 +33,6 @@ const paymentStatus = async (req, res) => {
         }
 
         appointment.paymentStatus = status;
-        await appointment.save();
 
         if (status === 'paid') {
             await sendBookingConfirmationEmail(req.user.email, {
@@ -43,7 +42,18 @@ const paymentStatus = async (req, res) => {
                 date: appointment.appointment_date,
                 time: appointment.appointment_time
             });
+            
+            appointment.status = 'booked';
+            appointment.paymentStatus = 'paid';
+
+        }else if (status === 'failed') {
+            appointment.status = 'payment_failed';
+            appointment.paymentStatus = 'failed';
+        }else{
+            appointment.paymentStatus = 'pending';
         }
+
+        await appointment.save({Transaction : t});
 
         res.redirect('/user/dashboard');
 
@@ -54,3 +64,7 @@ const paymentStatus = async (req, res) => {
         });
     }
 };
+
+module.exports = {
+    paymentStatus
+}

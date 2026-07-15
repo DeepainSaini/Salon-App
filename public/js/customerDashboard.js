@@ -26,6 +26,7 @@ function showSalons(salons) {
             <h3>${salon.name}</h3>
             <p>${salon.description}</p>
             <p><strong>City:</strong> ${salon.city}</p>
+            <p><strong>Contact Number: </strong> ${salon.phone}</p>
             <p><strong>Open:</strong> ${salon.open_time} - ${salon.close_time}</p>
 
             <button onclick="viewSalonServices(${salon.id})">
@@ -56,34 +57,134 @@ function showMyAppointments(appointments) {
 
     appointmentsList.innerHTML = "";
 
+    const upcoming = appointments.filter((appointment) => {
+        return(appointment.status === 'booked');
+    })
+
+    const completed = appointments.filter((appointment) => {
+        return(appointment.status === 'completed');
+    })
+
+    const cancelled = appointments.filter((appointment) => {
+
+        return(appointment.status === 'cancelled');
+    })
+
+    appointmentsList.innerHTML = `
+        <section>
+        <h3>Upcoming Appointments</h3>
+        <div id="upcoming-list"></div>
+        </section>
+
+        <section>
+        <h3>Completed Appointments</h3>
+        <div id="completed-list"></div>
+        </section>
+
+        <section>
+        <h3>Cancelled Appointments</h3>
+        <div id="cancelled-list"></div>
+        </section>
+    `;
+
+    renderAppointmentCards(upcoming, document.getElementById('upcoming-list'));
+    renderAppointmentCards(completed, document.getElementById('completed-list'));
+    renderAppointmentCards(cancelled, document.getElementById('cancelled-list'));
+}
+
+function renderAppointmentCards(appointments, container) {
+    
+    if (appointments.length === 0) {
+        container.innerHTML =
+        `<p class="empty-message">No appointments.</p>`;
+        return;
+    }
+
     appointments.forEach((appointment) => {
         const div = document.createElement('div');
         div.className = 'appointment-card';
 
-        div.innerHTML = `
-            <h3>${appointment.service.name}</h3>
-            <p><strong>Salon:</strong> ${appointment.salon.name}</p>
-            <p><strong>Staff:</strong> ${appointment.staff.name}</p>
-            <p><strong>Date:</strong> ${appointment.appointment_date}</p>
-            <p><strong>Time:</strong> ${appointment.appointment_time}</p>
-            <p><strong>Status:</strong> ${appointment.status}</p>
+        let actions = '';
 
-            ${appointment.status === 'booked' ? `
+        if (appointment.status === 'booked' && appointment.paymentStatus === 'paid') {
+        
+            actions = `
                 <button onclick="cancelAppointment(${appointment.id})">
-                    Cancel Appointment
+                Cancel Appointment
                 </button>
-            ` : ''}
 
-            <button onclick="rescheduleAppointment(${appointment.id}, ${appointment.salonId}, ${appointment.serviceId})">
+                <button onclick="rescheduleAppointment(
+                ${appointment.id},
+                ${appointment.salonId},
+                ${appointment.serviceId}
+                )">
                 Reschedule
-            </button>
+                </button>
+            `;
+        }
 
+        if ( appointment.status === 'completed' && appointment.paymentStatus === 'paid') {
+        
+            if (appointment.review) {
+                
+                actions = `
+                <div class="review-box">
+                    <p>
+                    <strong>Your Rating:</strong>
+                    ${appointment.review.rating}/5
+                    </p>
+
+                    <p>
+                    <strong>Your Review:</strong>
+                    ${appointment.review.comment}
+                    </p>
+
+                    ${
+                    appointment.review.staffResponse
+                        ? `
+                        <p>
+                            <strong>Staff Response:</strong>
+                            ${appointment.review.staffResponse}
+                        </p>
+                        `
+                        : `
+                        <p>
+                            <strong>Staff Response:</strong>
+                            No response yet
+                        </p>
+                        `
+                    }
+                </div>
+                `;
+
+            } else {
+
+                actions = `
+                <button onclick="openReviewPage(${appointment.id})">
+                    Leave Review
+                </button>
+                `;
+            }
+        }
+
+        div.innerHTML = `
+        <h3>${appointment.service.name}</h3>
+        <p><strong>Salon:</strong> ${appointment.salon.name}</p>
+        <p><strong>Staff:</strong> ${appointment.staff.name}</p>
+        <p><strong>Date:</strong> ${appointment.appointment_date}</p>
+        <p><strong>Time:</strong> ${appointment.appointment_time}</p>
+        <p><strong>Status:</strong> ${appointment.status}</p>
+        <p><strong>Payment:</strong> ${appointment.paymentStatus}</p>
+
+        ${actions}
         `;
 
-        
-
-        appointmentsList.appendChild(div);
+        container.appendChild(div);
     });
+}
+
+function openReviewPage(appointmentId) {
+  window.location.href = `/user/review?appointmentId=${appointmentId}`;
 }
 
 async function cancelAppointment(appointmentId) {
@@ -100,10 +201,9 @@ async function cancelAppointment(appointmentId) {
 
 async function rescheduleAppointment(appointmentId, salonId, serviceId) {
     try {
-        await axios.patch(`/user/appointments/${appointmentId}/cancel`);
-
-        window.location.href = `/user/bookAppointment?salonId=${salonId}&serviceId=${serviceId}`;
-
+         
+        window.location.href = `/user/bookAppointment?salonId=${salonId}&serviceId=${serviceId}&rescheduleId=${appointmentId}`;
+        
     } catch (error) {
         alert(error.response?.data?.message || "Could not reschedule appointment");
     }
@@ -112,3 +212,18 @@ async function rescheduleAppointment(appointmentId, salonId, serviceId) {
 function viewSalonServices(salonId) {
     window.location.href = `/user/salon/${salonId}`;
 }
+
+document.getElementById('logout-btn').addEventListener('click', async (event) => {
+     
+    try {
+        await axios.post('/user/logout');
+
+        localStorage.removeItem('token');
+        localStorage.removeItem('name');
+
+        window.location.href = '/user/login';
+
+    } catch (error) {
+        console.log('LOGOUT ERROR --->', error);
+    }
+});

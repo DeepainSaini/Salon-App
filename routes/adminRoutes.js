@@ -13,6 +13,8 @@ router.patch('/services/:id/status',userAuthentication.authenticate,adminControl
 router.get('/add-staff',userAuthentication.authenticate,adminController.getAddStaffForm);
 router.get('/data-for-staff',userAuthentication.authenticate,adminController.getDataForStaffForm);
 router.post('/addStaff',userAuthentication.authenticate,adminController.postAddStaff);
+router.patch('/appointments/:id/complete',userAuthentication.authenticate,adminController.markAppointmentCompleted);
+router.patch('/reviews/:id/response',userAuthentication.authenticate,adminController.respondToReview);
 
 
 module.exports = router;

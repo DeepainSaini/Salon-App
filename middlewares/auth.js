@@ -18,6 +18,11 @@ const authenticate = async (req,res,next) => {
         const userId = jwtSignedObj.userId;
         console.log("USER WITH THIS ID SENT REQUEST --> ",userId);
         const user = await Users.findByPk(userId);
+
+        if (!user) {
+        res.clearCookie('token');
+        return res.redirect('/user/login');
+        }
         req.user = user;
         next();
 

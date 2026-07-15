@@ -7,6 +7,7 @@ const { Op } = require('sequelize');
 const { sequelize } = require('../models');
 const { sendBookingConfirmationEmail } = require('../util/services/emailServices');
 const { createOrder, getPaymentStatus } = require('../util/services/cashfreeServices');
+const { paymentStatus } = require('./paymentController');
 
 function timeToMinutes(time) {
     const [hours, minutes] = time.slice(0, 5).split(':').map(Number);
@@ -28,7 +29,8 @@ const getBookAppointmentPage = (req, res) => {
 const getAvailableSlots = async (req, res) => {
 
     try {
-        const { salonId, serviceId, date } = req.query;
+        const { salonId, serviceId, date, excludeAppointmentId } = req.query;
+        console.log('EXCLUDE APPOINTMENT ID --->', excludeAppointmentId);
 
         if (!salonId || !serviceId || !date) {
             return res.status(400).json({
@@ -57,21 +59,39 @@ const getAvailableSlots = async (req, res) => {
             }
         });
 
+        console.log({
+            salonId,
+            serviceId,
+            date
+        });
+
+        console.log('SERVICE --->', service);
+        console.log('STAFF LIST --->', staffList);
+
         if (staffList.length === 0) {
             return res.status(200).json({
                 slots: []
             });
         }
 
-        const bookedAppointments = await Appointments.findAll({
-            where: {
-                salonId: salonId,
-                serviceId: serviceId,
-                appointment_date: date,
-                status: {
-                    [Op.ne]: 'cancelled'
-                }
+
+        const bookedWhere = {
+            salonId,
+            serviceId,
+            appointment_date: date,
+            status: {
+                [Op.in]: ['booked']
             }
+        };
+
+        if (excludeAppointmentId) {
+            bookedWhere.id = {
+                [Op.ne]: excludeAppointmentId
+            };
+        }
+
+        const bookedAppointments = await Appointments.findAll({
+          where: bookedWhere
         });
 
         const bookedSlots = bookedAppointments.map((appointment) => {
@@ -171,9 +191,8 @@ const postBookAppointment = async (req, res) => {
                 staffId: staffId,
                 appointment_date: appointment_date,
                 appointment_time: selectedTime,
-                status: {
-                    [Op.ne]: 'cancelled'
-                }
+                status: 'booked',
+                paymentStatus: 'paid'
             }
         });
 
@@ -198,7 +217,7 @@ const postBookAppointment = async (req, res) => {
             staffId: staffId,
             appointment_date: appointment_date,
             appointment_time: selectedTime,
-            status: 'booked',
+            status: 'pending_payment',
             paymentStatus: 'pending',
             orderId,
             paymentSessionId
@@ -217,21 +236,76 @@ const postBookAppointment = async (req, res) => {
         
         await t.commit();
 
-        res.status(201).json({
-            message: "appointment booked successfully",
-            appointment: appointment,
-            orderId,
-            paymentSessionId
-        });
+        res.status(201).json({message: "appointment booked successfully",appointment: appointment,orderId,paymentSessionId});
 
     } catch (error) {
         console.log("ERROR BOOKING APPOINTMENT ---> ", error);
         await t.rollback();
-        res.status(500).json({
-            message: "something went wrong"
-        });
+        res.status(500).json({message: "something went wrong"});
     }
 };
+
+const rescheduleAppointment = async (req,res) => {
+
+    const t = await sequelize.transaction();
+
+    try{
+
+        const {staffId,appointment_date,appointment_time,appointmentId} = req.body;
+
+        const appointment = await Appointments.findOne({
+
+            where: {
+                id: appointmentId,
+                userId: req.user.id,
+                status: 'booked',
+                paymentStatus: 'paid'
+            }
+        });
+
+        if(!appointment){
+            return res.status(404).json({message:"paid appointment not found"});
+        }
+
+        const conflict = await Appointments.findOne({
+
+            where: {
+                staffId: staffId,
+                appointment_date: appointment_date,
+                appointment_time: appointment_time,
+                status: 'booked',
+                id: {
+                    [Op.ne]: appointmentId
+                }
+            }
+        });
+
+        if(conflict){
+            return res.status(400).json({message:"the slot is already booked"});
+        }
+        
+        appointment.staffId = staffId;
+        appointment.appointment_date = appointment_date;
+        appointment.appointment_time = appointment_time;
+
+        await appointment.save({transaction : t});
+        await t.commit();
+
+        res.status(201).json({
+        message: 'Appointment rescheduled successfully',
+        appointment
+        });
+        
+    }catch(error){
+        
+        await t.rollback();
+        console.log('RESCHEDULE ERROR --->', error);
+
+        res.status(500).json({
+        message: 'Could not reschedule appointment'
+        });
+    }
+}
 
 
 
@@ -239,5 +313,6 @@ const postBookAppointment = async (req, res) => {
 module.exports = {
     getBookAppointmentPage,
     getAvailableSlots,
-    postBookAppointment
+    postBookAppointment,
+    rescheduleAppointment
 }

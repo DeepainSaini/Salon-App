@@ -124,19 +124,201 @@ function showAppointments(appointments) {
 
     appointmentsList.innerHTML = "";
 
-    appointments.forEach((appointment) => {
-        const div = document.createElement('div');
-        div.className = 'appointment-card';
+    const upcoming = appointments.filter(
+        appointment => appointment.status === 'booked'
+    );
 
-        div.innerHTML = `
-            <h3>${appointment.service.name}</h3>
-            <p><strong>Customer:</strong> ${appointment.customer.name}</p>
-            <p><strong>Staff:</strong> ${appointment.staff.name}</p>
-            <p><strong>Date:</strong> ${appointment.appointment_date}</p>
-            <p><strong>Time:</strong> ${appointment.appointment_time}</p>
-            <p><strong>Status:</strong> ${appointment.status}</p>
+  const completed = appointments.filter(
+        appointment => appointment.status === 'completed'
+    );
+
+  const cancelled = appointments.filter(
+        appointment => appointment.status === 'cancelled'
+    );
+
+  appointmentsList.innerHTML = `
+    <section>
+      <h3>Upcoming Appointments</h3>
+      <div id="admin-upcoming-list"></div>
+    </section>
+
+    <section>
+      <h3>Completed Appointments</h3>
+      <div id="admin-completed-list"></div>
+    </section>
+
+    <section>
+      <h3>Cancelled Appointments</h3>
+      <div id="admin-cancelled-list"></div>
+    </section>
+  `;
+
+  renderAdminAppointments(
+    upcoming,
+    document.getElementById('admin-upcoming-list')
+  );
+
+  renderAdminAppointments(
+    completed,
+    document.getElementById('admin-completed-list')
+  );
+
+  renderAdminAppointments(
+    cancelled,
+    document.getElementById('admin-cancelled-list')
+  );
+}
+
+function renderAdminAppointments(appointments, container) {
+  
+  if (appointments.length === 0) {
+    container.innerHTML =
+      `<p class="empty-message">No appointments.</p>`;
+    return;
+  }
+
+  appointments.forEach((appointment) => {
+    const div = document.createElement('div');
+    div.className = 'appointment-card';
+
+    let action = '';
+    let reviewContent='';
+
+    if (appointment.status === 'booked') {
+      action = `
+        <button onclick="markCompleted(${appointment.id})">
+          Mark Completed
+        </button>
+      `;
+    }
+
+    if(appointment.status === 'completed' && appointment.review){
+
+      if(appointment.review.staffResponse){
+        
+        reviewContent = `
+          <div class="review-box">
+            <p>
+              <strong>Rating:</strong>
+              ${appointment.review.rating}/5
+            </p>
+
+            <p>
+              <strong>Customer Review:</strong>
+              ${appointment.review.comment}
+            </p>
+
+            <p>
+              <strong>Your Response:</strong>
+              ${appointment.review.staffResponse}
+            </p>
+          </div>
         `;
 
-        appointmentsList.appendChild(div);
-    });
+      }else{
+        
+        reviewContent = `
+          <div class="review-box">
+            <p>
+              <strong>Rating:</strong>
+              ${appointment.review.rating}/5
+            </p>
+
+            <p>
+              <strong>Customer Review:</strong>
+              ${appointment.review.comment}
+            </p>
+
+            <textarea
+              id="response-${appointment.review.id}"
+              placeholder="Write your response">
+            </textarea>
+
+            <button onclick="submitResponse(
+              ${appointment.review.id}
+            )">
+              Submit Response
+            </button>
+          </div>
+        `;
+      }
+    }
+
+    div.innerHTML = `
+      <h3>${appointment.service.name}</h3>
+      <p><strong>Customer:</strong> ${appointment.customer.name}</p>
+      <p><strong>Contact Number: </strong> ${appointment.customer.phone}</p>
+      <p><strong>Staff:</strong> ${appointment.staff.name}</p>
+      <p><strong>Date:</strong> ${appointment.appointment_date}</p>
+      <p><strong>Time:</strong> ${appointment.appointment_time}</p>
+      <p><strong>Status:</strong> ${appointment.status}</p>
+      <p><strong>Payment:</strong> ${appointment.paymentStatus}</p>
+
+      ${action}
+      ${reviewContent}
+    `;
+
+    container.appendChild(div);
+  });
 }
+
+async function markCompleted(appointmentId) {
+  try {
+    await axios.patch(
+      `/admin/appointments/${appointmentId}/complete`
+    );
+
+    alert('Appointment marked as completed');
+
+    window.location.reload();
+
+  } catch (error) {
+    console.log(
+      'ERROR MARKING APPOINTMENT COMPLETED --->',
+      error
+    );
+
+    alert(
+      error.response?.data?.message ||
+      'Could not mark appointment as completed'
+    );
+  }
+}
+
+async function submitResponse(reviewId) {
+  
+  const responseText = document.getElementById(`response-${reviewId}`).value.trim();
+
+  if (!responseText) {
+    alert('Please write a response');
+    return;
+  }
+
+  try {
+    
+    await axios.patch(`/admin/reviews/${reviewId}/response`,{staffResponse: responseText});
+
+    alert('Response submitted successfully');
+    window.location.reload();
+
+  } catch (error) {
+    console.log('ERROR SUBMITTING RESPONSE --->', error);
+
+    alert(error.response?.data?.message ||'Could not submit response');
+  }
+}
+
+document.getElementById('logout-btn').addEventListener('click', async (event) => {
+     
+    try {
+        await axios.post('/user/logout');
+
+        localStorage.removeItem('token');
+        localStorage.removeItem('name');
+
+        window.location.href = '/user/login';
+
+    } catch (error) {
+        console.log('LOGOUT ERROR --->', error);
+    }
+});

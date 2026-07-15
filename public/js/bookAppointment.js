@@ -1,4 +1,5 @@
 const params = new URLSearchParams(window.location.search);
+const rescheduleId = params.get('rescheduleId');
 const salonId = params.get('salonId');
 const serviceId = params.get('serviceId');
 
@@ -15,7 +16,13 @@ document.getElementById('check-slots-btn').addEventListener('click', async () =>
     }
 
     try {
-        const response = await axios.get( `/user/available-slots?salonId=${salonId}&serviceId=${serviceId}&date=${date}`);
+       
+        let url =  `/user/available-slots?salonId=${salonId}&serviceId=${serviceId}&date=${date}`;
+        if (rescheduleId) {
+        url += `&excludeAppointmentId=${rescheduleId}`;
+        }
+
+        const response = await axios.get(url);
 
         showSlots(response.data.slots, date);
 
@@ -50,6 +57,24 @@ function showSlots(slots, date) {
 
 async function bookAppointment(slot, date) {
     try {
+
+         if (rescheduleId) {
+
+            await axios.patch(
+                `/user/appointments/reschedule`,
+                {
+                    staffId: slot.staffId,
+                    appointment_date: date,
+                    appointment_time: slot.time,
+                    appointmentId: rescheduleId
+                }
+            );
+
+            alert('Appointment rescheduled successfully');
+            window.location.href = '/user/dashboard';
+            return;
+        }
+
         
         const response = await axios.post('/user/bookAppointment', {
             salonId: salonId,

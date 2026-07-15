@@ -1,8 +1,8 @@
 const path = require('path');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
-const {Users,Salons,Services,Appointments,Staff} = require('../models');
-const {Sequelize,DataTypes, where} = require('sequelize');
+const {Users,Salons,Services,Appointments,Staff,Reviews} = require('../models');
+const {Sequelize,DataTypes, where,Op} = require('sequelize');
 const { sequelize } = require('../models');
 
 const getSignUpForm = async (req,res) => {
@@ -26,6 +26,10 @@ const postUserDetails = async (req,res) => {
         })
 
         console.log(user);
+
+        if (user.role != 'admin' && user.role != 'customer') {
+            return res.status(400).json({message: 'Invalid role'});
+        }
 
         if(!user){
            
@@ -222,12 +226,17 @@ const getMyAppointments = async (req, res) => {
     try {
         const appointments = await Appointments.findAll({
             where: {
-                userId: req.user.id
+                userId: req.user.id,
+                status: {
+                    [Op.in]: ['booked', 'completed', 'cancelled']
+                },
+                paymentStatus: 'paid'
             },
             include: [
                 { model: Salons, as: 'salon' },
                 { model: Services, as: 'service' },
-                { model: Staff, as: 'staff' }
+                { model: Staff, as: 'staff' },
+                {model: Reviews, as: 'review', required: false}
             ],
             order: [['appointment_date', 'ASC'], ['appointment_time', 'ASC']]
         });
@@ -299,6 +308,75 @@ const cancelAppointment = async (req, res) => {
     }
 };
 
+const getReviewForm = async (req,res) => {
+    res.sendFile(path.join(__dirname, '../', 'views', 'review.html'));
+}
+
+const postReview = async (req, res) => {
+  
+    const t = await sequelize.transaction();
+
+    try {
+        
+        const {appointmentId,rating,comment} = req.body;
+
+        if (!appointmentId || !rating || !comment) {
+            return res.status(400).json({message: 'Appointment, rating and comment are required'});
+        }
+
+        if (rating < 1 || rating > 5) {
+            return res.status(400).json({message: 'Rating must be between 1 and 5'});
+        }
+
+        const appointment = await Appointments.findOne({
+            where: {
+                id: appointmentId,
+                userId: req.user.id,
+                status: 'completed',
+                paymentStatus: 'paid'
+            }
+        });
+
+        if (!appointment) {
+            return res.status(404).json({message: 'Only completed paid appointments can be reviewed'});
+        }
+
+        const existingReview = await Reviews.findOne({
+            where: {
+                appointmentId
+            }
+        });
+
+        if (existingReview) {
+            return res.status(409).json({message: 'You have already reviewed this appointment'});
+        }
+
+        const review = await Reviews.create({
+            appointmentId,
+            userId: req.user.id,
+            rating,
+            comment
+        },{transaction : t});
+
+        await t.commit();
+
+        res.status(201).json({message: 'Review submitted successfully',review});
+
+    } catch (error) {
+        console.log('ERROR CREATING REVIEW --->', error);
+        await t.rollback();
+        res.status(500).json({message: 'Could not submit review'});
+    }
+};
+
+const logout = (req, res) => {
+  res.clearCookie('token');
+
+  res.status(200).json({
+    message: 'Logged out successfully'
+  });
+};
+
 module.exports = {
     getSignUpForm,
     postUserDetails,
@@ -311,5 +389,7 @@ module.exports = {
     getSalonServices,
     getSalonServicesPage,
     getMyAppointments,
-    cancelAppointment
+    cancelAppointment,
+    postReview,getReviewForm,
+    logout
 }

@@ -7,6 +7,6 @@ const userAuthentication = require('../middlewares/auth');
 
 
 
-router.get('/status/:orderId',userAuthentication.authenticate,userController.paymentStatus);
+router.get('/status/:orderId',userAuthentication.authenticate,paymentController.paymentStatus);
 
 module.exports = router;
