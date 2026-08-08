@@ -3,6 +3,7 @@ const params = new URLSearchParams(
 );
 
 const appointmentId = params.get('appointmentId');
+const reviewId = params.get('reviewId');
 const message = document.getElementById('review-message');
 
 
@@ -20,7 +21,15 @@ document.getElementById('review-form').addEventListener('submit', async (event) 
             comment: comment
         };
 
-        await axios.post('/user/review',obj);
+        if (reviewId) {
+            await axios.patch(`/user/reviews/${reviewId}`, {
+                rating,
+                comment
+            });
+        } else {
+                await axios.post('/user/review', obj);
+            }
+
         alert("Review Submitted");
 
         window.location.href = '/user/dashboard';

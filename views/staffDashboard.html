@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Staff Dashboard</title>
+  <link rel="stylesheet" href="/css/staffDashboard.css">
+</head>
+<body>
+
+  <header class="staff-header">
+    <h2>Staff Dashboard</h2>
+    <button id="staff-logout-btn">Logout</button>
+  </header>
+
+  <main class="staff-dashboard">
+        <section>
+            <h3>Today's Appointments</h3>
+            <div id="today-appointments">
+                <p class="empty-message">Loading...</p>
+            </div>
+        </section>
+
+        <section>
+            <h3>Upcoming Appointments</h3>
+            <div id="upcoming-appointments">
+                <p class="empty-message">Loading...</p>
+            </div>
+        </section>
+
+        <section>
+            <h3>Completed Appointments</h3>
+            <div id="completed-appointments">
+                <p class="empty-message">Loading...</p>
+            </div>
+        </section>
+
+        <section>
+        <h3>Customer Reviews</h3>
+        <div id="reviews-container">
+            <p class="empty-message">Loading reviews...</p>
+        </div>
+        </section>
+    </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+  <script src="/js/staffDashboard.js"></script>
+</body>
+</html>

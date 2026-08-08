@@ -1,22 +1,61 @@
 document.getElementsByTagName('h1')[0].innerHTML = `WELCOME ${localStorage.getItem('name')}`; 
+const accountBtn = document.getElementById('account-menu-btn');
+const accountDropdown = document.getElementById('account-dropdown');
+
+accountBtn.addEventListener('click', () => {
+  accountDropdown.classList.toggle('show');
+});
+
+window.addEventListener('click', (event) => {
+  if (!event.target.closest('.account-menu')) {
+    accountDropdown.classList.remove('show');
+  }
+});
 
 window.addEventListener('DOMContentLoaded', async () => {
-    try {
-        
-        const response = await axios.get('/user/dashboard-data');
-    
-        showSalons(response.data.salons);
-        loadMyAppointments();
-
-    } catch (error) {
-        console.log("ERROR LOADING CUSTOMER DASHBOARD ---> ", error);
-    }
+    loadSalons();
+    loadMyAppointments();
 });
+
+document.getElementById('salon-search-btn').addEventListener('click', () => {
+    const search = document.getElementById('salon-search-input').value.trim();
+    loadSalons(search);
+});
+
+document.getElementById('clear-search-btn').addEventListener('click', () => {
+    document.getElementById('salon-search-input').value = '';
+    loadSalons();
+});
+
+let searchTimer;
+
+document.getElementById('salon-search-input').addEventListener('input', (event) => {
+    clearTimeout(searchTimer);
+
+    searchTimer = setTimeout(() => {
+        const search = event.target.value.trim();
+        loadSalons(search);
+    }, 300);
+});
+
+async function loadSalons(search = '') {
+    try {
+        const response = await axios.get(`/user/dashboard-data?search=${search}`);
+        showSalons(response.data.salons);
+    } catch (error) {
+        console.log("ERROR LOADING SALONS ---> ", error);
+    }
+}
 
 function showSalons(salons) {
     const salonsList = document.getElementById('salons-list');
 
     salonsList.innerHTML = "";
+
+    if (salons.length === 0) {
+        salonsList.innerHTML = `<p class="empty-message">No salons found.</p>`;
+        return;
+    }
 
     salons.forEach((salon) => {
         const salonCard = document.createElement('div');
@@ -140,19 +179,33 @@ function renderAppointmentCards(appointments, container) {
                     </p>
 
                     ${
-                    appointment.review.staffResponse
-                        ? `
-                        <p>
-                            <strong>Staff Response:</strong>
-                            ${appointment.review.staffResponse}
-                        </p>
-                        `
-                        : `
-                        <p>
-                            <strong>Staff Response:</strong>
-                            No response yet
-                        </p>
-                        `
+                        !appointment.review.staffResponse
+                            ? `
+                            <button onclick="openEditReviewPage(${appointment.review.id})">
+                                Edit Review
+                            </button>
+
+                            <button onclick="deleteReview(${appointment.review.id})">
+                                Delete Review
+                            </button>
+                            `
+                            : ''
+                    }
+
+                    ${
+                        appointment.review.staffResponse
+                            ? `
+                            <p>
+                                <strong>Staff Response:</strong>
+                                ${appointment.review.staffResponse}
+                            </p>
+                            `
+                            : `
+                            <p>
+                                <strong>Staff Response:</strong>
+                                No response yet
+                            </p>
+                            `
                     }
                 </div>
                 `;
@@ -173,8 +226,12 @@ function renderAppointmentCards(appointments, container) {
         <p><strong>Staff:</strong> ${appointment.staff.name}</p>
         <p><strong>Date:</strong> ${appointment.appointment_date}</p>
         <p><strong>Time:</strong> ${appointment.appointment_time}</p>
+        <p><strong>Price:</strong> ₹${appointment.bookingPrice || appointment.service.price}</p>
         <p><strong>Status:</strong> ${appointment.status}</p>
         <p><strong>Payment:</strong> ${appointment.paymentStatus}</p>
+        ${
+            appointment.invoice? `<p><a href="${appointment.invoice.pdfPath}" target="_blank">Download Invoice</a></p>`: ''
+        }
 
         ${actions}
         `;
@@ -185,6 +242,29 @@ function renderAppointmentCards(appointments, container) {
 
 function openReviewPage(appointmentId) {
   window.location.href = `/user/review?appointmentId=${appointmentId}`;
+}
+
+function openEditReviewPage(reviewId) {
+  window.location.href = `/user/review?reviewId=${reviewId}`;
+}
+
+async function deleteReview(reviewId) {
+  const confirmDelete = confirm('Are you sure you want to delete this review?');
+
+  if (!confirmDelete) {
+    return;
+  }
+
+  try {
+    await axios.delete(`/user/reviews/${reviewId}`);
+
+    alert('Review deleted successfully');
+    loadMyAppointments();
+
+  } catch (error) {
+    console.log('ERROR DELETING REVIEW --->', error);
+    alert(error.response?.data?.message || 'Could not delete review');
+  }
 }
 
 async function cancelAppointment(appointmentId) {
@@ -202,7 +282,7 @@ async function cancelAppointment(appointmentId) {
 async function rescheduleAppointment(appointmentId, salonId, serviceId) {
     try {
          
-        window.location.href = `/user/bookAppointment?salonId=${salonId}&serviceId=${serviceId}&rescheduleId=${appointmentId}`;
+        window.location.href = `/user/bookAppointment?salonId=${salonId}&serviceId=${serviceId}&rescheduleId=${appointmentId}`;  
         
     } catch (error) {
         alert(error.response?.data?.message || "Could not reschedule appointment");

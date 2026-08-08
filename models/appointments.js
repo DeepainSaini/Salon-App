@@ -11,6 +11,11 @@ module.exports = (sequelize, DataTypes) => {
      */
     static associate(models) {
       // define association here
+
+      Appointments.hasOne(models.Invoice, {
+        foreignKey: 'appointmentId',
+        as: 'invoice'
+      });
       Appointments.belongsTo(models.Users, {
           foreignKey: 'userId',
           as: 'customer'
@@ -86,7 +91,12 @@ module.exports = (sequelize, DataTypes) => {
     paymentSessionId: {
         type: DataTypes.STRING,
         allowNull: true
-    }
+    },
+
+    bookingPrice: {
+    type: DataTypes.DECIMAL(10, 2),
+    allowNull: false
+  }
 
   }, {
     sequelize,

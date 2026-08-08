@@ -21,8 +21,10 @@
     "mysql2": "^3.22.3",
     "node-cron": "^4.5.0",
     "nodemon": "^3.1.14",
+    "pdfkit": "^0.19.1",
     "sequelize": "^6.37.8",
-    "sib-api-v3-sdk": "^8.5.0"
+    "sib-api-v3-sdk": "^8.5.0",
+    "uuid": "^14.0.1"
   },
   "devDependencies": {
     "sequelize-cli": "^6.6.5"

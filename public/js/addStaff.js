@@ -4,14 +4,17 @@ window.addEventListener('DOMContentLoaded', async () => {
 
         const services = response.data.services;
         const salon = response.data.salon;
-        const serviceSelect = document.getElementById('serviceId');
+        const servicesList = document.getElementById('services-checkbox-list');
 
         services.forEach((service) => {
-            const option = document.createElement('option');
-            option.value = service.id;
-            option.textContent = service.name;
+            const label = document.createElement('label');
 
-            serviceSelect.appendChild(option);
+            label.innerHTML = `
+                <input type="checkbox" name="serviceIds" value="${service.id}">
+                ${service.name}
+            `;
+
+            servicesList.appendChild(label);
         });
 
         const availableFrom = document.getElementById('available_from');
@@ -41,8 +44,9 @@ document.getElementById('add-staff-form').addEventListener('submit', async (even
         name: event.target.name.value,
         phone: event.target.phone.value,
         email: event.target.email.value,
+        password: event.target.password.value,
         specialization: event.target.specialization.value,
-        serviceId: event.target.serviceId.value,
+        serviceIds: Array.from(document.querySelectorAll('input[name="serviceIds"]:checked')).map(input => input.value),
         available_from: event.target.available_from.value,
         available_to: event.target.available_to.value
     };

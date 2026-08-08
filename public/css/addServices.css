@@ -30,7 +30,8 @@ h1 {
 }
 
 /* Stack labels and inputs vertically */
-#servicesForm label {
+#servicesForm label,
+#edit-service-form label {
     display: flex;
     flex-direction: column;
     margin-bottom: 16px;
@@ -42,7 +43,10 @@ h1 {
 
 /* Style inputs and select dropdowns */
 #servicesForm input,
-#servicesForm select {
+#servicesForm select,
+#edit-service-form input,
+#edit-service-form select,
+#edit-service-form textarea {
     padding: 10px;
     border: 1px solid #cccccc;
     border-radius: 4px;
@@ -54,7 +58,10 @@ h1 {
 
 /* Highlight inputs on focus */
 #servicesForm input:focus,
-#servicesForm select:focus {
+#servicesForm select:focus,
+#edit-service-form input:focus,
+#edit-service-form select:focus,
+#edit-service-form textarea:focus {
     border-color: #007bff;
 }
 

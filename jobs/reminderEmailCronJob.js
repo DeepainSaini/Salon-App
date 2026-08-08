@@ -4,11 +4,11 @@ const { Appointments, Users, Salons, Services, Staff } = require('../models');
 const { sendAppointmentReminderEmail } = require('../util/services/emailServices');
 
 function getAppointmentDateTime(appointment) {
-    return new Date(`${appointment.appointment_date}T${appointment.appointment_time}`);
+    return new Date(`${appointment.appointment_date}T${appointment.appointment_time}`);    //T is used because js understands this format: This 2026-07-23T14:30 means 23 July 2026, 2:30 PM
 }
 
 const startReminderCron = () => {
-    cron.schedule('0 0 * * *', async () => {
+    cron.schedule('* * * * *', async () => {
         try {
             console.log("Checking appointment reminders...");
 

@@ -1,0 +1,113 @@
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background-color: #f4f6f8;
+  color: #222;
+}
+
+.staff-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 18px 36px;
+  background-color: #ffffff;
+  border-bottom: 1px solid #ddd;
+}
+
+.staff-header h2 {
+  margin: 0;
+  font-size: 24px;
+}
+
+#staff-logout-btn {
+  padding: 9px 14px;
+  border: none;
+  border-radius: 5px;
+  background-color: #222;
+  color: #ffffff;
+  cursor: pointer;
+}
+
+#staff-logout-btn:hover {
+  background-color: #444;
+}
+
+.staff-dashboard {
+  max-width: 900px;
+  margin: 32px auto;
+  padding: 0 18px;
+}
+
+.staff-dashboard h3 {
+  margin-bottom: 20px;
+  font-size: 22px;
+}
+
+.staff-dashboard section {
+  margin-bottom: 34px;
+}
+
+.appointment-card {
+  background-color: #ffffff;
+  padding: 18px;
+  margin-bottom: 14px;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.appointment-card h4 {
+  margin: 0 0 10px;
+  font-size: 18px;
+}
+
+.appointment-card p {
+  margin: 7px 0;
+}
+
+.review-card {
+  background-color: #ffffff;
+  padding: 20px;
+  margin-bottom: 18px;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.review-card h4 {
+  margin: 0 0 10px;
+  font-size: 18px;
+}
+
+.review-card p {
+  margin: 8px 0;
+  line-height: 1.4;
+}
+
+.response-box {
+  width: 100%;
+  min-height: 80px;
+  margin-top: 12px;
+  padding: 10px;
+  font-family: Arial, sans-serif;
+  font-size: 14px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  resize: vertical;
+}
+
+.respond-btn {
+  margin-top: 10px;
+  padding: 9px 14px;
+  border: none;
+  border-radius: 5px;
+  background-color: #222;
+  color: #ffffff;
+  cursor: pointer;
+}
+
+.respond-btn:hover {
+  background-color: #444;
+}
+
+.empty-message {
+  color: #666;
+}

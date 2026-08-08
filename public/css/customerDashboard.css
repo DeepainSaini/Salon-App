@@ -75,21 +75,21 @@ button:hover {
     text-align: center;
 }
 
-@media (max-width: 600px) {
-    .dashboard-container {
-        padding: 15px;
-    }
 
-    button {
-        width: 100%;
-    }
-}
 
 .dashboard-header {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
   gap: 20px;
+}
+
+.dashboard-actions {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 20px;
 }
 
 #logout-btn {
@@ -103,4 +103,118 @@ button:hover {
 
 #logout-btn:hover {
   background: #8f1d14;
+}
+
+.edit-profile-btn,
+.change-pass-button {
+  display: inline-block;
+  padding: 10px 14px;
+  background-color: #222;
+  color: #ffffff;
+  text-decoration: none;
+  border-radius: 5px;
+  font-size: 14px;
+  margin-right: 10px;
+}
+
+.edit-profile-btn:hover,
+.change-pass-button:hover {
+  background-color: #444;
+}
+
+
+
+.dashboard-actions {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.account-menu {
+  position: relative;
+  display: inline-block;
+}
+
+.account-menu-btn {
+  padding: 10px 14px;
+  background-color: #222;
+  color: #ffffff;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.account-dropdown {
+  display: none;
+  position: absolute;
+  right: 0;
+  top: 42px;
+  min-width: 180px;
+  background-color: #ffffff;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.12);
+  z-index: 10;
+}
+
+.account-dropdown a,
+.account-dropdown button {
+  display: block;
+  width: 100%;
+  padding: 11px 14px;
+  border: none;
+  background: none;
+  color: #222;
+  text-align: left;
+  font-size: 14px;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.account-dropdown a:hover,
+.account-dropdown button:hover {
+  background-color: #f2f2f2;
+}
+
+.account-dropdown.show {
+  display: block;
+}
+
+.salon-search-box {
+  display: flex;
+  gap: 10px;
+  margin: 16px 0 22px;
+}
+
+.salon-search-box input {
+  flex: 1;
+  padding: 11px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  font-size: 14px;
+}
+
+.salon-search-box button {
+  padding: 11px 14px;
+  border: none;
+  border-radius: 5px;
+  background-color: #222;
+  color: #ffffff;
+  cursor: pointer;
+}
+
+.salon-search-box button:hover {
+  background-color: #444;
+}
+
+@media (max-width: 600px) {
+    .dashboard-container {
+        padding: 15px;
+    }
+
+    button {
+        width: 100%;
+    }
 }

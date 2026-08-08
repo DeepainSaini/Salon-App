@@ -104,6 +104,57 @@ button:hover {
   gap: 20px;
 }
 
+.account-menu {
+  position: relative;
+  display: inline-block;
+}
+
+.account-menu-btn {
+  padding: 10px 14px;
+  background-color: #222;
+  color: #ffffff;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.account-dropdown {
+  display: none;
+  position: absolute;
+  right: 0;
+  top: 42px;
+  min-width: 180px;
+  background-color: #ffffff;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.12);
+  z-index: 10;
+}
+
+.account-dropdown a,
+.account-dropdown button {
+  display: block;
+  width: 100%;
+  padding: 11px 14px;
+  border: none;
+  background: none;
+  color: #222;
+  text-align: left;
+  font-size: 14px;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.account-dropdown a:hover,
+.account-dropdown button:hover {
+  background-color: #f2f2f2;
+}
+
+.account-dropdown.show {
+  display: block;
+}
+
+
 #logout-btn {
   padding: 8px 14px;
   border: none;

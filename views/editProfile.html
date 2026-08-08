@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Edit Profile</title>
+  <link rel="stylesheet" href="/css/editProfile.css">
+</head>
+<body>
+
+  <div class="profile-container">
+    <h2>Edit Profile</h2>
+
+    <form id="edit-profile-form">
+      <input type="text" id="name" placeholder="Name" required>
+
+      <input type="text" id="phone" placeholder="Phone" required>
+
+      <select id="notification_preference" required>
+        <option value="email">Email</option>
+        <option value="sms">SMS</option>
+      </select>
+
+      <textarea id="notes" placeholder="Preferences or notes"></textarea>
+
+      <button type="submit">Update Profile</button>
+    </form>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+  <script src="/js/editProfile.js"></script>
+</body>
+</html>

@@ -14,9 +14,17 @@
             <p>Manage your salon, services, staff and appointments</p>
         </div>
 
-        <button id="logout-btn">
-            Logout
-        </button>
+        <div class="account-menu">
+            <button id="account-menu-btn" class="account-menu-btn">
+                Account
+            </button>
+
+            <div id="account-dropdown" class="account-dropdown">
+                <a href="/admin/salonDetails/edit">Edit Salon Details</a>
+                <a href="/user/change-password">Change Password</a>
+                <button id="logout-btn">Logout</button>
+            </div>
+        </div>
     </header>
 
     <div class="dashboard-container">
@@ -50,6 +58,11 @@
             <div id="staff-list" class="empty-box">
                 <p>No staff added yet.</p>
             </div>
+        </section>
+
+        <section class="dashboard-section">
+            <h2>Customers</h2>
+            <div id="customers-list"></div>
         </section>
 
         <section class="appointments-section">

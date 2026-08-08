@@ -58,3 +58,7 @@ loginForm.addEventListener('submit',(event)=>{
         console.log("ERROR DURING LOGIN ---> ",error);
     })
 })
+
+document.getElementById('forgot-password-btn').addEventListener('click', () => {
+  window.location.href = '/user/forgot-password';
+});

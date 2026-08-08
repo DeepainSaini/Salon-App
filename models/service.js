@@ -16,8 +16,10 @@ module.exports = (sequelize, DataTypes) => {
         as: 'salon'
       });
 
-      Services.hasMany(models.Staff, {
+      Services.belongsToMany(models.Staff, {
+        through: models.StaffServices,
         foreignKey: 'serviceId',
+        otherKey: 'staffId',
         as: 'staff'
       });
 
@@ -58,6 +60,15 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.BOOLEAN,
       allowNull: false,
       defaultValue: true
+    },
+
+    available_from: {
+      type: DataTypes.TIME,
+      allowNull: false
+    },
+    available_to: {
+      type: DataTypes.TIME,
+      allowNull: false
     }
   }, {
     sequelize,

@@ -9,12 +9,12 @@ const { sendBookingConfirmationEmail } = require('../util/services/emailServices
 const { createOrder, getPaymentStatus } = require('../util/services/cashfreeServices');
 const { paymentStatus } = require('./paymentController');
 
-function timeToMinutes(time) {
+function timeToMinutes(time) {                                                   // converts time into minutes: 10:30 => 630
     const [hours, minutes] = time.slice(0, 5).split(':').map(Number);
     return hours * 60 + minutes;
 }
 
-function minutesToTime(totalMinutes) {
+function minutesToTime(totalMinutes) {                                           //converts it back: 630 => "10:30"
     const hours = Math.floor(totalMinutes / 60);
     const minutes = totalMinutes % 60;
 
@@ -55,8 +55,17 @@ const getAvailableSlots = async (req, res) => {
         const staffList = await Staff.findAll({
             where: {
                 salonId: salonId,
-                serviceId: serviceId
-            }
+                is_active: true
+            },
+            include: [
+                {
+                model: Services,
+                as: 'services',
+                where: {
+                    id: serviceId
+                }
+                }
+            ]
         });
 
         console.log({
@@ -104,8 +113,13 @@ const getAvailableSlots = async (req, res) => {
         const currentTime = new Date().toTimeString().slice(0, 5);
 
         staffList.forEach((staff) => {
-            const startMinutes = timeToMinutes(staff.available_from);
-            const endMinutes = timeToMinutes(staff.available_to);
+            const staffStart = timeToMinutes(staff.available_from);
+            const staffEnd = timeToMinutes(staff.available_to);
+            const serviceStart = timeToMinutes(service.available_from || staff.available_from);
+            const serviceEnd = timeToMinutes(service.available_to || staff.available_to);
+
+            const startMinutes = Math.max(staffStart, serviceStart);
+            const endMinutes = Math.min(staffEnd, serviceEnd);
             const duration = Number(service.duration);
 
             for (let time = startMinutes; time + duration <= endMinutes; time += duration) {
@@ -126,7 +140,8 @@ const getAvailableSlots = async (req, res) => {
                 }
             }
         });
-
+        
+        console.log("SLOTS AVAILABLE FOR BOOKING ARE ------->>>>>", slots);
         res.status(200).json({
             slots: slots
         });
@@ -166,8 +181,17 @@ const postBookAppointment = async (req, res) => {
             where: {
                 id: staffId,
                 salonId: salonId,
-                serviceId: serviceId
-            }
+                is_active: true
+            },
+            include: [
+                {
+                model: Services,
+                as: 'services',
+                where: {
+                    id: serviceId
+                }
+                }
+            ]
         });
 
         if (!staff) {
@@ -202,9 +226,9 @@ const postBookAppointment = async (req, res) => {
             });
         }
 
-        const orderId = "ORDER-" + Date.now();
-        const paymentSessionId = await createOrder(
-            orderId,
+        const orderId = "ORDER-" + Date.now();           //Initiating payment by creating cashfree order. 
+        const paymentSessionId = await createOrder(      //date.now() returns the current timestamp—the exact number 
+            orderId,                                     //of milliseconds that have passed since January 1, 1970
             Number(service.price),
             req.user.id,
             req.user.phone || "9999999999"
@@ -219,6 +243,7 @@ const postBookAppointment = async (req, res) => {
             appointment_time: selectedTime,
             status: 'pending_payment',
             paymentStatus: 'pending',
+            bookingPrice: service.price,
             orderId,
             paymentSessionId
 

@@ -16,9 +16,11 @@ module.exports = (sequelize, DataTypes) => {
         as: 'salon'
       });
 
-      Staff.belongsTo(models.Services, {
-        foreignKey: 'serviceId',
-        as: 'service'
+      Staff.belongsToMany(models.Services, {
+        through: models.StaffServices,
+        foreignKey: 'staffId',
+        otherKey: 'serviceId',
+        as: 'services'
       });
 
       Staff.hasMany(models.Appointments, {
@@ -39,6 +41,11 @@ module.exports = (sequelize, DataTypes) => {
     },
 
     email: {
+      type: DataTypes.STRING,
+      allowNull: false
+    },
+
+    password: {
       type: DataTypes.STRING,
       allowNull: false
     },
@@ -66,6 +73,18 @@ module.exports = (sequelize, DataTypes) => {
     serviceId: {
       type: DataTypes.INTEGER,
       allowNull: false
+    },
+
+    is_active: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: true
+    },
+
+    mustChangePassword: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: true
     }
   }, {
     sequelize,

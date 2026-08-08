@@ -65,7 +65,31 @@ const sendAppointmentReminderEmail = async (email, appointmentDetails) => {
     }
 };
 
+const sendForgotPasswordEmail = async (email, resetLink) => {
+  const tranEmailApi = new Sib.TransactionalEmailsApi();
+
+  await tranEmailApi.sendTransacEmail({
+    sender: {
+      email: 'deepainsaini111@gmail.com',
+      name: 'Salon Appointment App'
+    },
+    to: [
+      {
+        email: email
+      }
+    ],
+    subject: 'Reset your password',
+    htmlContent: `
+      <h3>Password Reset Request</h3>
+      <p>Click the link below to reset your password:</p>
+      <p><a href="${resetLink}">Reset Password</a></p>
+      <p>This link will expire in 15 minutes.</p>
+    `
+  });
+};
+
 module.exports = {
     sendBookingConfirmationEmail,
-    sendAppointmentReminderEmail
+    sendAppointmentReminderEmail,
+    sendForgotPasswordEmail
 };

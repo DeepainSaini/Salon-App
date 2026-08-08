@@ -12,6 +12,7 @@ window.addEventListener('DOMContentLoaded', async () => {
         showSalonDetails(salon);
         showServices(services);
         showStaff(staff);
+        showCustomers(appointments);
         showAppointments(appointments)
 
     } catch (error) {
@@ -55,10 +56,16 @@ function showServices(services) {
         </p>
         <button onclick="toggleServiceStatus(${service.id})">
             ${service.is_active ? 'Deactivate' : 'Activate'}
-        </button> `;
+        </button>
+        
+        <button onclick="editService(${service.id})">Edit</button>`;
 
         servicesListDiv.appendChild(serviceDiv);
     });
+}
+
+function editService(serviceId) {
+  window.location.href = `/admin/services/${serviceId}/edit`;
 }
 
 function showStaff(staffList) {
@@ -80,8 +87,13 @@ function showStaff(staffList) {
             <p><strong>Email:</strong> ${staff.email}</p>
             <p><strong>Phone:</strong> ${staff.phone}</p>
             <p><strong>Specialization:</strong> ${staff.specialization}</p>
-            <p><strong>Assigned Service:</strong> ${staff.service ? staff.service.name : 'Not assigned'}</p>
+            <p><strong>Assigned Service:</strong> ${staff.services && staff.services.length > 0 ? staff.services.map(service => service.name).join(', '): 'Not assigned'}</p>
             <p><strong>Available:</strong> ${staff.available_from} - ${staff.available_to}</p>
+            <p><strong>Status:</strong> ${staff.is_active ? 'Active' : 'Inactive'}</p>
+
+            <button onclick="toggleStaffStatus(${staff.id})">
+                ${staff.is_active ? 'Deactivate' : 'Activate'}
+            </button>
         `;
 
         staffListDiv.appendChild(staffDiv);
@@ -101,6 +113,16 @@ async function toggleServiceStatus(serviceId) {
     }
 }
 
+async function toggleStaffStatus(staffId) {
+    try {
+        await axios.patch(`/admin/staff/${staffId}/status`);
+        window.location.reload();
+    } catch (error) {
+        console.log("ERROR UPDATING STAFF STATUS ---> ", error);
+        alert("Could not update staff status");
+    }
+}
+
 document.getElementById('add-service-btn').addEventListener('click', (event)=>{
 
     event.preventDefault();
@@ -112,6 +134,79 @@ document.getElementById('add-staff-btn').addEventListener('click', (event)=>{
     event.preventDefault();
     window.location.href = '/admin/add-staff';
 })
+
+
+function showCustomers(appointments) {
+  const customersList = document.getElementById('customers-list');
+
+  if (!customersList) {
+    return;
+  }
+
+  const customersMap = {};
+
+  appointments.forEach((appointment) => {
+    const customer = appointment.customer;
+
+    if (!customer) {
+      return;
+    }
+
+    if (!customersMap[customer.id]) {
+      customersMap[customer.id] = {
+        id: customer.id,
+        name: customer.name,
+        email: customer.email,
+        phone: customer.phone,
+        totalAppointments: 0,
+        completedAppointments: 0,
+        cancelledAppointments: 0
+      };
+    }
+
+    customersMap[customer.id].totalAppointments++;
+
+    if (appointment.status === 'completed') {
+      customersMap[customer.id].completedAppointments++;
+    }
+
+    if (appointment.status === 'cancelled') {
+      customersMap[customer.id].cancelledAppointments++;
+    }
+  });
+
+  const customers = Object.values(customersMap);
+
+  if (customers.length === 0) {
+    customersList.innerHTML = `<p class="empty-message">No customers yet.</p>`;
+    return;
+  }
+
+  customersList.innerHTML = '';
+
+  customers.forEach((customer) => {
+    const div = document.createElement('div');
+    div.className = 'item-card';
+
+    div.innerHTML = `
+      <h3>${customer.name}</h3>
+      <p><strong>Email:</strong> ${customer.email}</p>
+      <p><strong>Phone:</strong> ${customer.phone || 'Not provided'}</p>
+      <p><strong>Total Appointments:</strong> ${customer.totalAppointments}</p>
+      <p><strong>Completed:</strong> ${customer.completedAppointments}</p>
+      <p><strong>Cancelled:</strong> ${customer.cancelledAppointments}</p>
+      <button onclick="viewCustomerDetails(${customer.id})">
+        View Details
+      </button>
+    `;
+
+    customersList.appendChild(div);
+  });
+}
+
+function viewCustomerDetails(customerId) {
+  window.location.href = `/admin/customers/${customerId}`;
+}
 
 
 function showAppointments(appointments) {
@@ -189,59 +284,25 @@ function renderAdminAppointments(appointments, container) {
         <button onclick="markCompleted(${appointment.id})">
           Mark Completed
         </button>
+
+        <button onclick="cancelAppointmentByAdmin(${appointment.id})">
+          Cancel Appointment
+        </button>
+
+       <button onclick="editAppointment(${appointment.id})">
+          Edit Appointment
+       </button>
       `;
     }
 
-    if(appointment.status === 'completed' && appointment.review){
-
-      if(appointment.review.staffResponse){
-        
-        reviewContent = `
-          <div class="review-box">
-            <p>
-              <strong>Rating:</strong>
-              ${appointment.review.rating}/5
-            </p>
-
-            <p>
-              <strong>Customer Review:</strong>
-              ${appointment.review.comment}
-            </p>
-
-            <p>
-              <strong>Your Response:</strong>
-              ${appointment.review.staffResponse}
-            </p>
-          </div>
-        `;
-
-      }else{
-        
-        reviewContent = `
-          <div class="review-box">
-            <p>
-              <strong>Rating:</strong>
-              ${appointment.review.rating}/5
-            </p>
-
-            <p>
-              <strong>Customer Review:</strong>
-              ${appointment.review.comment}
-            </p>
-
-            <textarea
-              id="response-${appointment.review.id}"
-              placeholder="Write your response">
-            </textarea>
-
-            <button onclick="submitResponse(
-              ${appointment.review.id}
-            )">
-              Submit Response
-            </button>
-          </div>
-        `;
-      }
+    if (appointment.status === 'completed' && appointment.review) {
+      reviewContent = `
+        <div class="review-box">
+          <p><strong>Rating:</strong> ${appointment.review.rating}/5</p>
+          <p><strong>Customer Review:</strong> ${appointment.review.comment}</p>
+          <p><strong>Staff Response:</strong> ${appointment.review.staffResponse || 'No response yet'}</p>
+        </div>
+      `;
     }
 
     div.innerHTML = `
@@ -251,8 +312,12 @@ function renderAdminAppointments(appointments, container) {
       <p><strong>Staff:</strong> ${appointment.staff.name}</p>
       <p><strong>Date:</strong> ${appointment.appointment_date}</p>
       <p><strong>Time:</strong> ${appointment.appointment_time}</p>
+      <p><strong>Price:</strong> ₹${appointment.bookingPrice || appointment.service.price}</p>
       <p><strong>Status:</strong> ${appointment.status}</p>
       <p><strong>Payment:</strong> ${appointment.paymentStatus}</p>
+      ${
+        appointment.invoice? `<p><a href="${appointment.invoice.pdfPath}" target="_blank">Download Invoice</a></p>`: ''
+      }
 
       ${action}
       ${reviewContent}
@@ -285,28 +350,46 @@ async function markCompleted(appointmentId) {
   }
 }
 
-async function submitResponse(reviewId) {
-  
-  const responseText = document.getElementById(`response-${reviewId}`).value.trim();
+async function cancelAppointmentByAdmin(appointmentId) {
+  const confirmCancel = confirm('Are you sure you want to cancel this appointment?');
 
-  if (!responseText) {
-    alert('Please write a response');
+  if (!confirmCancel) {
     return;
   }
 
   try {
-    
-    await axios.patch(`/admin/reviews/${reviewId}/response`,{staffResponse: responseText});
+    await axios.patch(`/admin/appointments/${appointmentId}/cancel`);
 
-    alert('Response submitted successfully');
+    alert('Appointment cancelled successfully');
+
     window.location.reload();
 
   } catch (error) {
-    console.log('ERROR SUBMITTING RESPONSE --->', error);
+    console.log('ERROR CANCELLING APPOINTMENT --->', error);
 
-    alert(error.response?.data?.message ||'Could not submit response');
+    alert(
+      error.response?.data?.message ||
+      'Could not cancel appointment'
+    );
   }
 }
+
+function editAppointment(appointmentId) {
+  window.location.href = `/admin/appointments/${appointmentId}/edit`;
+}
+
+const accountBtn = document.getElementById('account-menu-btn');
+const accountDropdown = document.getElementById('account-dropdown');
+
+accountBtn.addEventListener('click', () => {
+  accountDropdown.classList.toggle('show');
+});
+
+window.addEventListener('click', (event) => {
+  if (!event.target.closest('.account-menu')) {
+    accountDropdown.classList.remove('show');
+  }
+});
 
 document.getElementById('logout-btn').addEventListener('click', async (event) => {
      

@@ -8,6 +8,9 @@ document.getElementById('servicesForm').addEventListener('submit', async (event)
         description: event.target.service_description.value,
         price: event.target.service_price.value,
         duration: event.target.service_duration.value,
+        available_from: event.target.available_from.value,
+        available_to: event.target.available_to.value
+
     };
 
   

@@ -15,14 +15,26 @@
                 <p>Browse salon services and book your appointment</p>
             </div>
 
-             <button id="logout-btn">
-                Logout
-            </button>
+            <div class="account-menu">
+                <button id="account-menu-btn" class="account-menu-btn">
+                    Account
+                </button>
+
+                <div id="account-dropdown" class="account-dropdown">
+                    <a href="/user/profile/edit">Edit Profile</a>
+                    <a href="/user/change-password">Change Password</a>
+                    <button id="logout-btn">Logout</button>
+                </div>
+            </div>
         </header>
 
         <section class="salons-section">
             <h2>Available Salons</h2>
-
+            <div class="salon-search-box">
+                <input type="text" id="salon-search-input" placeholder="Search salon by name">
+                <button id="salon-search-btn">Search</button>
+                <button id="clear-search-btn">Clear</button>
+            </div>
             <div id="salons-list" class="salons-list">
                 
             </div>

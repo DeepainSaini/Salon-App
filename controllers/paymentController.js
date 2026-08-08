@@ -9,6 +9,9 @@ const { sendBookingConfirmationEmail } = require('../util/services/emailServices
 const { createOrder, getPaymentStatus } = require('../util/services/cashfreeServices');
 
 const paymentStatus = async (req, res) => {
+    
+    const t = await sequelize.transaction();
+    
     try {
         const { orderId } = req.params;
 
@@ -53,12 +56,14 @@ const paymentStatus = async (req, res) => {
             appointment.paymentStatus = 'pending';
         }
 
-        await appointment.save({Transaction : t});
+        await appointment.save({transaction : t});
+        await t.commit();
 
         res.redirect('/user/dashboard');
 
     } catch (error) {
         console.log("PAYMENT STATUS ERROR ---> ", error);
+        await t.rollback();
         res.status(500).json({
             message: "payment status error"
         });

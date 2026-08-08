@@ -80,6 +80,21 @@ link a:hover {
     text-decoration: underline;
 }
 
+.forgot-password-link,.staff-login-link {
+  margin-top: 12px;
+  text-align: center;
+}
+
+.forgot-password-link a, .staff-login-link a {
+  color: #222;
+  font-size: 14px;
+  text-decoration: none;
+}
+
+.forgot-password-link a:hover, .staff-login-link a:hover {
+  text-decoration: underline;
+}
+
 .errormsg {
   margin-top: 8px;
   font-size: 13px;

@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Edit Salon Details</title>
+    <link rel="stylesheet" href="/css/salonDetails.css"> 
+</head>
+<body>
+
+    <div id="step-1-container">
+        <h1>Edit Details</h1>
+        
+
+        <form id="step-1-form">
+            <label>Salon Name
+                <input type="text" id="salon_name" name="salon_name" required placeholder="e.g. Glow & Co.">
+            </label>
+            <label>Description
+                <input type="text" id="salon_description" name="salon_description" required placeholder="e.g. Glow & Co.">
+            </label>
+             <label>Phone Number
+                <input type="text" id="salon_phone" name="salon_phone" required placeholder="9876543210">
+            </label>
+             <label>Email
+                <input type="email" id="salon_email" name="salon_email" required placeholder="abc@gmail.com">
+            </label>
+             <label>Address
+                <input type="text" id="salon_address" name="salon_address" required placeholder="street name">
+            </label>
+            <label>City
+                <input type="text" id="salon_city" name="salon_city" required placeholder="e.g. Hisar">
+            </label>
+             <label>Zipcode
+                <input type="text" id="salon_zipcode" name="salon_zipcode" required placeholder="12345">
+            </label>
+           
+            <div>
+                <label style="width: 50%;">Opening Time
+                    <input type="time" id="open_time" name="open_time" required value="09:00">
+                </label>
+                <label style="width: 50%;">Closing Time
+                    <input type="time" id="close_time" name="close_time" required value="19:00">
+                </label>
+            </div>
+
+            <button type="submit" id="submit-btn">Update Salon Details &#10003;</button>
+        </form>
+    </div>
+
+   <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/1.9.0/axios.min.js"></script>
+   <script src="/js/editSalonDetails.js"></script>
+</body>
+</html>

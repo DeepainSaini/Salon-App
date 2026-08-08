@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Edit Appointment</title>
+  <link rel="stylesheet" href="/css/bookAppointment.css">
+</head>
+<body>
+
+  <div class="booking-container">
+    <h2>Edit Appointment</h2>
+
+    <div id="appointment-details"></div>
+
+    <label>Select New Date</label>
+    <input type="date" id="appointment-date">
+
+    <button id="check-slots-btn">Check Available Slots</button>
+
+    <div id="slots-list"></div>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/1.9.0/axios.min.js"></script>
+  <script src="/js/editAppointment.js"></script>
+</body>
+</html>

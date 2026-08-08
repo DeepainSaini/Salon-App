@@ -86,13 +86,14 @@ async function bookAppointment(slot, date) {
 
         const { paymentSessionId } = response.data;
 
-        const checkoutOptions = {
+        const checkoutOptions = {                      
             paymentSessionId: paymentSessionId,
             redirectTarget: "_self",
         };
 
-        await cashfree.checkout(checkoutOptions);
-
+        await cashfree.checkout(checkoutOptions);      //opens cashfree checkout.
+                                                       //After payment attempt, Cashfree redirects user back to this backend route.
+                                                       //return_url: `http://localhost:3000/payment/status/${orderId}`
         } catch (error) {
             console.log("ERROR BOOKING/PAYMENT ---> ", error);
             alert(error.response?.data?.message || "Could not start payment");
