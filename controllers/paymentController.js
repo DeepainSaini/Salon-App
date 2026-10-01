@@ -1,14 +1,11 @@
 const path = require('path');
-const bcrypt = require('bcrypt');
-const jwt = require('jsonwebtoken');
-const {Users,Salons,Services,Staff,Appointments} = require('../models');
-const {Sequelize,DataTypes, where, Transaction} = require('sequelize');
-const { Op } = require('sequelize');
+const {Salons,Services,Staff,Appointments} = require('../models');
 const { sequelize } = require('../models');
 const { sendBookingConfirmationEmail } = require('../util/services/emailServices');
-const { createOrder, getPaymentStatus } = require('../util/services/cashfreeServices');
+const { getPaymentStatus } = require('../util/services/cashfreeServices');
+const asyncHandler = require('../util/asyncHandler');
 
-const paymentStatus = async (req, res) => {
+const paymentStatus = asyncHandler(async (req, res) => {
     
     const t = await sequelize.transaction();
     
@@ -30,6 +27,7 @@ const paymentStatus = async (req, res) => {
         });
 
         if (!appointment) {
+            await t.rollback();
             return res.status(404).json({
                 message: "appointment not found"
             });
@@ -64,11 +62,9 @@ const paymentStatus = async (req, res) => {
     } catch (error) {
         console.log("PAYMENT STATUS ERROR ---> ", error);
         await t.rollback();
-        res.status(500).json({
-            message: "payment status error"
-        });
+        throw error;
     }
-};
+});
 
 module.exports = {
     paymentStatus

@@ -9,22 +9,38 @@ module.exports = {
         primaryKey: true,
         type: Sequelize.INTEGER
       },
+
       appointmentId: {
-        type: Sequelize.INTEGER
+        type: Sequelize.INTEGER,
+        allowNull: false,
+        references: {
+          model: 'Appointments',
+          key: 'id'
+        },
+        onDelete: 'CASCADE'
       },
+
       invoiceNumber: {
-        type: Sequelize.STRING
+        type: Sequelize.STRING,
+        allowNull: false,
+        unique: true
       },
+
       amount: {
-        type: Sequelize.DECIMAL
+        type: Sequelize.DECIMAL(10, 2),
+        allowNull: false
       },
+
       pdfPath: {
-        type: Sequelize.STRING
+        type: Sequelize.STRING,
+        allowNull: false
       },
+
       createdAt: {
         allowNull: false,
         type: Sequelize.DATE
       },
+      
       updatedAt: {
         allowNull: false,
         type: Sequelize.DATE

@@ -12,6 +12,7 @@ const reviewRoutes = require('./routes/reviewRoutes');
 const passwordRoutes = require('./routes/passwordRoutes');
 const staffRoutes = require('./routes/staffRoutes');
 const { startReminderCron } = require('./jobs/reminderEmailCronJob');
+const errorHandler = require('./middlewares/errorHandler');
 
 
 const app = express();
@@ -34,6 +35,7 @@ app.use('/payment', paymentRoutes);
 app.use('/user', passwordRoutes);
 app.use('/staff', staffRoutes);
 app.use(express.static('public'));
+app.use(errorHandler);
 
 
 

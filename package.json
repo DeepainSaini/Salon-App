@@ -4,7 +4,7 @@
   "description": "salon appoimntement ",
   "main": "app.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "node tests/timeHelpers.test.js && node tests/availabilityService.test.js && node tests/errorHelpers.test.js",
     "start": "nodemon app.js",
     "start server": "node app.js"
   },

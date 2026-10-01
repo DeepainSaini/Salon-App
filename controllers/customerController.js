@@ -1,9 +1,8 @@
 const path = require('path');
-const bcrypt = require('bcrypt');
-const jwt = require('jsonwebtoken');
-const {Users,Salons,Services,Appointments,Staff,Reviews,Invoice} = require('../models');
-const {Sequelize,DataTypes, where,Op} = require('sequelize');
+const { Salons, Services, Appointments, Staff, Reviews, Invoice } = require('../models');
+const { Op } = require('sequelize');
 const { sequelize } = require('../models');
+const asyncHandler = require('../util/asyncHandler');
 
 
 
@@ -12,109 +11,90 @@ const getCustomerDashboard = async (req,res) => {
     res.sendFile(path.join(__dirname,'../','views','customerDashboard.html'));
 }
 
-const getDashboardData = async (req, res) => {
-    try {
+const getDashboardData = asyncHandler(async (req, res) => {
 
-        const { search } = req.query;
+    const { search } = req.query;
 
-        const whereCondition = {};
+    const whereCondition = {};
 
-        if (search) {
-            whereCondition.name = {
-                [Op.like]: `${search}%`
-            };
-        }
-
-        const salons = await Salons.findAll({
-            where: whereCondition
-        });
-
-        res.status(200).json({
-            salons: salons
-        });
-
-    } catch (error) {
-        console.log("ERROR GETTING SALONS ---> ", error);
-        res.status(500).json({
-            message: "something went wrong"
-        });
+    if (search) {
+        whereCondition.name = {
+            [Op.like]: `${search}%`
+        };
     }
-};
+
+    const salons = await Salons.findAll({
+        where: whereCondition
+    });
+
+    res.status(200).json({
+        salons: salons
+    });
+
+});
 
 
 const getSalonServicesPage = (req, res) => {
     res.sendFile(path.join(__dirname, '../', 'views', 'salonServices.html'));
 };
 
-const getSalonServices = async (req, res) => {
-    try {
-        const salonId = req.params.salonId;
+const getSalonServices = asyncHandler(async (req, res) => {
 
-        const salon = await Salons.findByPk(salonId, {
-            include: [
-                {
-                    model: Services,
-                    as: 'services',
-                    where: {
-                        is_active: true
-                    },
-                    required: false
-                }
-            ]
-        });
+    const salonId = req.params.salonId;
 
-        if (!salon) {
-            return res.status(404).json({
-                message: "salon not found"
-            });
-        }
-
-        res.status(200).json({
-            salon: salon,
-            services: salon.services
-        });
-
-    } catch (error) {
-        console.log("ERROR GETTING SALON SERVICES ---> ", error);
-        res.status(500).json({
-            message: "something went wrong"
-        });
-    }
-};
-
-const getMyAppointments = async (req, res) => {
-    try {
-        const appointments = await Appointments.findAll({
-            where: {
-                userId: req.user.id,
-                status: {
-                    [Op.in]: ['booked', 'completed', 'cancelled']
+    const salon = await Salons.findByPk(salonId, {
+        include: [
+            {
+                model: Services,
+                as: 'services',
+                where: {
+                    is_active: true
                 },
-                paymentStatus: 'paid'
-            },
-            include: [
-                { model: Salons, as: 'salon' },
-                { model: Services, as: 'service' },
-                { model: Staff, as: 'staff' },
-                {model: Reviews, as: 'review', required: false},
-                { model: Invoice, as: 'invoice', required: false }
-            ],
-            order: [['appointment_date', 'ASC'], ['appointment_time', 'ASC']]
-        });
+                required: false
+            }
+        ]
+    });
 
-        res.status(200).json({
-            appointments
-        });
-
-    } catch (error) {
-        console.log("ERROR GETTING USER APPOINTMENTS ---> ", error);
-        res.status(500).json({
-            message: "something went wrong"
+    if (!salon) {
+        return res.status(404).json({
+            message: "salon not found"
         });
     }
-};
 
-const cancelAppointment = async (req, res) => {
+    res.status(200).json({
+        salon: salon,
+        services: salon.services
+    });
+
+});
+
+const getMyAppointments = asyncHandler(async (req, res) => {
+
+    const appointments = await Appointments.findAll({
+        where: {
+            userId: req.user.id,
+            status: {
+                [Op.in]: ['booked', 'completed', 'cancelled']
+            },
+            paymentStatus: 'paid'
+        },
+        include: [
+            { model: Salons, as: 'salon' },
+            { model: Services, as: 'service' },
+            { model: Staff, as: 'staff' },
+            {model: Reviews, as: 'review', required: false},
+            { model: Invoice, as: 'invoice', required: false }
+        ],
+        order: [['appointment_date', 'ASC'], ['appointment_time', 'ASC']]
+    });
+
+    res.status(200).json({
+        appointments
+    });
+
+});
+
+const cancelAppointment = asyncHandler(async (req, res) => {
 
     const t = await sequelize.transaction();
 
@@ -129,12 +109,14 @@ const cancelAppointment = async (req, res) => {
         });
 
         if (!appointment) {
+            await t.rollback();
             return res.status(404).json({
                 message: "appointment not found"
             });
         }
 
         if (appointment.status === 'cancelled') {
+            await t.rollback();
             return res.status(400).json({
                 message: "appointment already cancelled"
             });
@@ -145,6 +127,7 @@ const cancelAppointment = async (req, res) => {
         );
 
         if (appointmentDateTime <= new Date()) {
+            await t.rollback();
             return res.status(400).json({
                 message: "past appointments cannot be cancelled"
             });
@@ -163,11 +146,9 @@ const cancelAppointment = async (req, res) => {
     } catch (error) {
         console.log("ERROR CANCELLING APPOINTMENT ---> ", error);
         await t.rollback();
-        res.status(500).json({
-            message: "something went wrong"
-        });
+        throw error;
     }
-};
+});
 
 
 

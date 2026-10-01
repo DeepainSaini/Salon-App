@@ -1,162 +1,50 @@
 const path = require('path');
-const bcrypt = require('bcrypt');
-const jwt = require('jsonwebtoken');
-const {Users,Salons,Services,Staff,Appointments} = require('../models');
-const {Sequelize,DataTypes, where} = require('sequelize');
+const { Services, Staff, Appointments } = require('../models');
 const { Op } = require('sequelize');
 const { sequelize } = require('../models');
-const { sendBookingConfirmationEmail } = require('../util/services/emailServices');
-const { createOrder, getPaymentStatus } = require('../util/services/cashfreeServices');
-const { paymentStatus } = require('./paymentController');
+const { createOrder } = require('../util/services/cashfreeServices');
+const { getAvailableSlotsForService } = require('../util/services/availabilityService');
+const asyncHandler = require('../util/asyncHandler');
 
-function timeToMinutes(time) {                                                   // converts time into minutes: 10:30 => 630
-    const [hours, minutes] = time.slice(0, 5).split(':').map(Number);
-    return hours * 60 + minutes;
-}
-
-function minutesToTime(totalMinutes) {                                           //converts it back: 630 => "10:30"
-    const hours = Math.floor(totalMinutes / 60);
-    const minutes = totalMinutes % 60;
-
-    return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
-}
 
 const getBookAppointmentPage = (req, res) => {
     res.sendFile(path.join(__dirname, '../', 'views', 'bookAppointment.html'));
 };
 
 
-const getAvailableSlots = async (req, res) => {
+const getAvailableSlots = asyncHandler(async (req, res) => {
 
-    try {
-        const { salonId, serviceId, date, excludeAppointmentId } = req.query;
-        console.log('EXCLUDE APPOINTMENT ID --->', excludeAppointmentId);
+    
+    const { salonId, serviceId, date, excludeAppointmentId } = req.query;
 
-        if (!salonId || !serviceId || !date) {
-            return res.status(400).json({
-                message: "salonId, serviceId and date are required"
-            });
-        }
-
-        const service = await Services.findOne({
-            where: {
-                id: serviceId,
-                salonId: salonId,
-                is_active: true
-            }
-        });
-
-        if (!service) {
-            return res.status(404).json({
-                message: "service not found"
-            });
-        }
-
-        const staffList = await Staff.findAll({
-            where: {
-                salonId: salonId,
-                is_active: true
-            },
-            include: [
-                {
-                model: Services,
-                as: 'services',
-                where: {
-                    id: serviceId
-                }
-                }
-            ]
-        });
-
-        console.log({
-            salonId,
-            serviceId,
-            date
-        });
-
-        console.log('SERVICE --->', service);
-        console.log('STAFF LIST --->', staffList);
-
-        if (staffList.length === 0) {
-            return res.status(200).json({
-                slots: []
-            });
-        }
-
-
-        const bookedWhere = {
-            salonId,
-            serviceId,
-            appointment_date: date,
-            status: {
-                [Op.in]: ['booked']
-            }
-        };
-
-        if (excludeAppointmentId) {
-            bookedWhere.id = {
-                [Op.ne]: excludeAppointmentId
-            };
-        }
-
-        const bookedAppointments = await Appointments.findAll({
-          where: bookedWhere
-        });
-
-        const bookedSlots = bookedAppointments.map((appointment) => {
-            return `${appointment.staffId}-${appointment.appointment_time.slice(0, 5)}`;
-        });
-
-        const slots = [];
-
-        const today = new Date().toISOString().slice(0, 10);
-        const currentTime = new Date().toTimeString().slice(0, 5);
-
-        staffList.forEach((staff) => {
-            const staffStart = timeToMinutes(staff.available_from);
-            const staffEnd = timeToMinutes(staff.available_to);
-            const serviceStart = timeToMinutes(service.available_from || staff.available_from);
-            const serviceEnd = timeToMinutes(service.available_to || staff.available_to);
-
-            const startMinutes = Math.max(staffStart, serviceStart);
-            const endMinutes = Math.min(staffEnd, serviceEnd);
-            const duration = Number(service.duration);
-
-            for (let time = startMinutes; time + duration <= endMinutes; time += duration) {
-                const slotTime = minutesToTime(time);
-
-                if (date === today && slotTime <= currentTime) {
-                    continue;
-                }
-
-                const slotKey = `${staff.id}-${slotTime}`;
-
-                if (!bookedSlots.includes(slotKey)) {
-                    slots.push({
-                        time: slotTime,
-                        staffId: staff.id,
-                        staffName: staff.name
-                    });
-                }
-            }
-        });
-        
-        console.log("SLOTS AVAILABLE FOR BOOKING ARE ------->>>>>", slots);
-        res.status(200).json({
-            slots: slots
-        });
-
-    } catch (error) {
-        console.log("ERROR GETTING AVAILABLE SLOTS ---> ", error);
-        res.status(500).json({
-            message: "something went wrong"
+    if (!salonId || !serviceId || !date) {
+        return res.status(400).json({
+            message: "salonId, serviceId and date are required"
         });
     }
-};
 
-const postBookAppointment = async (req, res) => {
+    const result = await getAvailableSlotsForService({
+        salonId,
+        serviceId,
+        date,
+        excludeAppointmentId
+    });
+
+    if (result.error) {
+        return res.status(result.error.status).json({
+            message: result.error.message
+        });
+    }
     
-     const t = await sequelize.transaction();
+    res.status(200).json({
+        slots: result.slots
+    });
+
+});
+
+const postBookAppointment = asyncHandler(async (req, res) => {
+    
+    const t = await sequelize.transaction();
 
     try {
         const { salonId, serviceId,staffId,appointment_date,appointment_time} = req.body;
@@ -172,6 +60,7 @@ const postBookAppointment = async (req, res) => {
         });
 
         if (!service) {
+            await t.rollback();
             return res.status(404).json({
                 message: "service not found"
             });
@@ -195,6 +84,7 @@ const postBookAppointment = async (req, res) => {
         });
 
         if (!staff) {
+            await t.rollback();
             return res.status(404).json({
                 message: "staff not found for this service"
             });
@@ -205,6 +95,7 @@ const postBookAppointment = async (req, res) => {
         const staffEnd = staff.available_to.slice(0, 5);
 
         if (selectedTime < staffStart || selectedTime >= staffEnd) {
+            await t.rollback();
             return res.status(400).json({
                 message: "selected time is outside staff availability"
             });
@@ -221,6 +112,7 @@ const postBookAppointment = async (req, res) => {
         });
 
         if (existingAppointment) {
+            await t.rollback();
             return res.status(409).json({
                 message: "This slot is already booked"
             });
@@ -249,16 +141,6 @@ const postBookAppointment = async (req, res) => {
 
         },{transaction: t});
 
-        const salon = await Salons.findByPk(salonId);
-
-            if (!salon) {
-                return res.status(404).json({
-                    message: "salon not found"
-                });
-        }
-
-
-        
         await t.commit();
 
         res.status(201).json({message: "appointment booked successfully",appointment: appointment,orderId,paymentSessionId});
@@ -266,11 +148,11 @@ const postBookAppointment = async (req, res) => {
     } catch (error) {
         console.log("ERROR BOOKING APPOINTMENT ---> ", error);
         await t.rollback();
-        res.status(500).json({message: "something went wrong"});
+        throw error;
     }
-};
+});
 
-const rescheduleAppointment = async (req,res) => {
+const rescheduleAppointment = asyncHandler(async (req,res) => {
 
     const t = await sequelize.transaction();
 
@@ -289,6 +171,7 @@ const rescheduleAppointment = async (req,res) => {
         });
 
         if(!appointment){
+            await t.rollback();
             return res.status(404).json({message:"paid appointment not found"});
         }
 
@@ -306,6 +189,7 @@ const rescheduleAppointment = async (req,res) => {
         });
 
         if(conflict){
+            await t.rollback();
             return res.status(400).json({message:"the slot is already booked"});
         }
         
@@ -325,12 +209,9 @@ const rescheduleAppointment = async (req,res) => {
         
         await t.rollback();
         console.log('RESCHEDULE ERROR --->', error);
-
-        res.status(500).json({
-        message: 'Could not reschedule appointment'
-        });
+        throw error;
     }
-}
+});
 
 
 
