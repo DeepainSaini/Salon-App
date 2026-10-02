@@ -10,7 +10,6 @@ const getAdminDetailsForm = async (req,res) => {
 const postSalonDetails = asyncHandler(async (req,res) => {
 
     const t = await sequelize.transaction();
-    console.log("SALON DETAILS ------> ",req.body);
 
     try {
 

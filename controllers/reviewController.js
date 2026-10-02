@@ -62,7 +62,6 @@ const postReview = asyncHandler(async (req, res) => {
         res.status(201).json({message: 'Review submitted successfully',review});
 
     } catch (error) {
-        console.log('ERROR CREATING REVIEW --->', error);
         await t.rollback();
         throw error;
     }
@@ -122,7 +121,6 @@ const editReview = asyncHandler(async (req, res) => {
     });
 
   } catch (error) {
-    console.log('ERROR EDITING REVIEW --->', error);
     await t.rollback();
     throw error;
   }
@@ -163,7 +161,6 @@ const deleteReview = asyncHandler(async (req, res) => {
     });
 
   } catch (error) {
-    console.log('ERROR DELETING REVIEW --->', error);
     await t.rollback();
     throw error;
   }

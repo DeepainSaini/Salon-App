@@ -30,14 +30,18 @@ document.getElementById('signupForm').addEventListener('submit',(event) => {
     }).catch((error)=>{
         
         const errorDiv = document.getElementById('errormsg');
+        const message = error.response?.data?.message || 'Signup failed. Please try again.';
 
-        if(error.response.data.message === "user with this email alredy exists"){
-
+        if(message === "user with this email alredy exists"){
             errorDiv.textContent = "USER WITH THIS EMAIL ALREADY EXISTS."
-            setTimeout(() => {
-                errorDiv.textContent = "";
-            }, 4000);
+        } else {
+            errorDiv.textContent = message;
         }
+
+        setTimeout(() => {
+            errorDiv.textContent = "";
+        }, 4000);
+
         console.log("ERROR DURING SIGNUP ---> ",error);
     })
 })

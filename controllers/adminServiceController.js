@@ -11,7 +11,6 @@ const getAddServiceForm =  (req,res) => {
 const postAddedService = asyncHandler(async (req,res) => {
 
     const t = await sequelize.transaction();
-    console.log("SERVICE TO ADD -------> ",req.body);
 
     try{
 

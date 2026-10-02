@@ -2,13 +2,18 @@ const express = require('express');
 const router = express.Router();
 const customerController = require('../controllers/customerController');
 const userAuthentication = require('../middlewares/auth');
+const { requireParams } = require('../middlewares/validateRequest');
+const { requireCustomer } = require('../middlewares/authorise');
 
-router.get('/dashboard',userAuthentication.authenticate,customerController.getCustomerDashboard);
-router.get('/dashboard-data',userAuthentication.authenticate,customerController.getDashboardData);
-router.get('/salon/:salonId',userAuthentication.authenticate,customerController.getSalonServicesPage);
-router.get('/salon/:salonId/services',userAuthentication.authenticate, customerController.getSalonServices);
-router.get('/my-appointments',userAuthentication.authenticate,customerController.getMyAppointments);
-router.patch('/appointments/:id/cancel',userAuthentication.authenticate,customerController.cancelAppointment);
+router.use(userAuthentication.authenticate);
+router.use(requireCustomer);
+
+router.get('/dashboard', customerController.getCustomerDashboard);
+router.get('/dashboard-data', customerController.getDashboardData);
+router.get('/salon/:salonId', requireParams(['salonId']), customerController.getSalonServicesPage);
+router.get('/salon/:salonId/services', requireParams(['salonId']), customerController.getSalonServices);
+router.get('/my-appointments', customerController.getMyAppointments);
+router.patch('/appointments/:id/cancel', requireParams(['id']), customerController.cancelAppointment);
 
 
 

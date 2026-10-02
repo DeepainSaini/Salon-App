@@ -4,6 +4,7 @@ const jwt = require('jsonwebtoken');
 const { Users, Salons } = require('../models');
 const { sequelize } = require('../models');
 const asyncHandler = require('../util/asyncHandler');
+const { config } = require('../config/appConfig');
 
 
 
@@ -20,7 +21,6 @@ const postUserDetails = asyncHandler(async (req,res) => {
     try{
         
         const {name,email,password,role} = req.body;
-        console.log("request body>>>>>>>>>",req.body);
         const encryptedPassword = await bcrypt.hash(password,10);
 
         let user = await Users.findOne({
@@ -28,8 +28,6 @@ const postUserDetails = asyncHandler(async (req,res) => {
                 email: email
             }
         })
-
-        console.log(user);
 
         if (role != 'Admin' && role != 'Customer') {
             await t.rollback();
@@ -57,7 +55,6 @@ const postUserDetails = asyncHandler(async (req,res) => {
         
     }catch(error){
         
-        console.log("ERROR IN USERCONTROLLER --->  ",error);
         await t.rollback();
         throw error;
     }
@@ -71,7 +68,7 @@ const getLoginForm = (req,res) =>{
 
 function generateAccessToken(id){
 
-    return jwt.sign({userId:id},process.env.JWT_SECRET_KEY);
+    return jwt.sign({userId:id}, config.auth.jwtSecret);
 
 }
 
@@ -118,7 +115,7 @@ const validateUser = asyncHandler(async (req,res) => {
 
     res.cookie('token', token, { 
         httpOnly: true,          
-        secure: false,    
+            secure: config.auth.cookieSecure,    
         // path : '/',        
         maxAge: 24 * 60 * 60 * 1000, 
         sameSite: 'lax'      

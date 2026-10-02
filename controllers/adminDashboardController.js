@@ -52,8 +52,6 @@ const getAdminDashboardData = asyncHandler(async (req,res) => {
         order: [['appointment_date', 'ASC'], ['appointment_time', 'ASC']]
     });
 
-    console.log("SERVICE ------->>>>>>>",salon.services);
-
     return res.status(200).json({
         salon: salon,
         services: salon.services || [],

@@ -60,7 +60,6 @@ const paymentStatus = asyncHandler(async (req, res) => {
         res.redirect('/user/dashboard');
 
     } catch (error) {
-        console.log("PAYMENT STATUS ERROR ---> ", error);
         await t.rollback();
         throw error;
     }

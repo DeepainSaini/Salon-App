@@ -144,7 +144,6 @@ const cancelAppointment = asyncHandler(async (req, res) => {
         });
 
     } catch (error) {
-        console.log("ERROR CANCELLING APPOINTMENT ---> ", error);
         await t.rollback();
         throw error;
     }

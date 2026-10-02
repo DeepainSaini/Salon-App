@@ -130,7 +130,6 @@ const postAddStaff = asyncHandler(async (req, res) => {
         });
 
     } catch (error) {
-        console.log("ERROR ADDING STAFF ---> ", error);
         await t.rollback();
         throw error;
     }
@@ -180,7 +179,6 @@ const changeStaffStatus = asyncHandler(async (req, res) => {
         });
 
     } catch (error) {
-        console.log("ERROR UPDATING STAFF STATUS ---> ", error);
         await t.rollback();
         throw error;
     }

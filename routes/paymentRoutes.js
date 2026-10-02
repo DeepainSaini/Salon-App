@@ -1,12 +1,12 @@
 const express = require('express');
 const router = express.Router();
-const userController = require('../controllers/customerController');
-const bookingController = require('../controllers/bookingController');
 const paymentController = require('../controllers/paymentController');
 const userAuthentication = require('../middlewares/auth');
+const { requireParams } = require('../middlewares/validateRequest');
+const { requireCustomer } = require('../middlewares/authorise');
 
 
 
-router.get('/status/:orderId',userAuthentication.authenticate,paymentController.paymentStatus);
+router.get('/status/:orderId', userAuthentication.authenticate, requireCustomer, requireParams(['orderId']), paymentController.paymentStatus);
 
 module.exports = router;

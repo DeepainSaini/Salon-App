@@ -10,8 +10,6 @@ function getAppointmentDateTime(appointment) {
 const startReminderCron = () => {
     cron.schedule('* * * * *', async () => {
         try {
-            console.log("Checking appointment reminders...");
-
             const now = new Date();
             const next24Hours = new Date(now.getTime() + 24 * 60 * 60 * 1000);
 
@@ -46,7 +44,7 @@ const startReminderCron = () => {
             }
 
         } catch (error) {
-            console.log("REMINDER CRON ERROR ---> ", error);
+            console.log("REMINDER CRON ERROR ---> ", error.message);
         }
     });
 };

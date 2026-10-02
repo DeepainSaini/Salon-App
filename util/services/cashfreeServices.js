@@ -1,10 +1,14 @@
 const { Cashfree, CFEnvironment } = require('cashfree-pg');
-require('dotenv').config();
+const { config } = require('../../config/appConfig');
+
+const cashfreeEnvironment = config.cashfree.environment === 'production'
+    ? CFEnvironment.PRODUCTION
+    : CFEnvironment.SANDBOX;
 
 const cashfree = new Cashfree(
-    CFEnvironment.SANDBOX,
-    process.env.CASHFREE_APP_ID,
-    process.env.CASHFREE_SECRET_KEY
+    cashfreeEnvironment,
+    config.cashfree.appId,
+    config.cashfree.secretKey
 );
 
 const createOrder = async (orderId, orderAmount, customerId, customerPhone) => {
@@ -19,7 +23,7 @@ const createOrder = async (orderId, orderAmount, customerId, customerPhone) => {
             customer_phone: customerPhone || "9999999999"
         },
         order_meta: {
-            return_url: `http://localhost:3000/payment/status/${orderId}`,
+            return_url: `${config.server.baseUrl}/payment/status/${orderId}`,
             payment_methods: "cc,dc,upi"
         },
         order_expiry_time: expiryDate.toISOString()

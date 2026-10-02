@@ -1,25 +1,15 @@
-require('dotenv').config();
+const { config } = require('./appConfig');
+
+const databaseConfig = {
+  username: config.database.username,
+  password: config.database.password,
+  database: config.database.name,
+  host: config.database.host,
+  dialect: config.database.dialect
+};
 
 module.exports = {
-  "development": {
-    "username": process.env.DB_USERNAME,
-    "password": process.env.DB_PASSWORD,
-    "database": process.env.DB_NAME,
-    "host": process.env.DB_HOST,
-    "dialect": process.env.DB_DIALECT
-  },
-  "test": {
-    "username": process.env.DB_USERNAME,
-    "password": process.env.DB_PASSWORD,
-    "database": process.env.DB_NAME,
-    "host": process.env.DB_HOST,
-    "dialect": process.env.DB_DIALECT
-  },
-  "production": {
-    "username": process.env.DB_USERNAME,
-    "password": process.env.DB_PASSWORD,
-    "database": process.env.DB_NAME,
-    "host": process.env.DB_HOST,
-    "dialect": process.env.DB_DIALECT
-  }
-}
+  development: databaseConfig,
+  test: databaseConfig,
+  production: databaseConfig
+};

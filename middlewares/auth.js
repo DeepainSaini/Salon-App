@@ -1,6 +1,6 @@
 const jwt = require('jsonwebtoken');
 const {Users} = require('../models');
-require('dotenv').config();
+const { config } = require('../config/appConfig');
 
 
 const authenticate = async (req,res,next) => {
@@ -13,10 +13,8 @@ const authenticate = async (req,res,next) => {
             return res.redirect('/user/login');
         }
         
-        console.log("TOKEN --->  ",token);
-        const jwtSignedObj = jwt.verify(token,process.env.JWT_SECRET_KEY);
+        const jwtSignedObj = jwt.verify(token, config.auth.jwtSecret);
         const userId = jwtSignedObj.userId;
-        console.log("USER WITH THIS ID SENT REQUEST --> ",userId);
         const user = await Users.findByPk(userId);
 
         if (!user) {
@@ -27,7 +25,6 @@ const authenticate = async (req,res,next) => {
         next();
 
     }catch(error){
-        console.log("ERROR DURING AUTHENTICATION --> ",error);
         return res.status(401).json({ success: false, message: "Unauthorized" });
     }
 }

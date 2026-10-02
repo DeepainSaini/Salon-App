@@ -4,6 +4,7 @@ const jwt = require('jsonwebtoken');
 const { Staff, Reviews, Appointments, Services, Users } = require('../models');
 const { sequelize } = require('../models');
 const asyncHandler = require('../util/asyncHandler');
+const { config } = require('../config/appConfig');
 
 const getStaffLoginPage = (req, res) => {
   res.sendFile(path.join(__dirname, '../', 'views', 'staffLogin.html'));
@@ -43,12 +44,12 @@ const staffLogin = asyncHandler(async (req, res) => {
       staffId: staff.id,
       role: 'staff'
     },
-    process.env.JWT_SECRET_KEY
+    config.auth.jwtSecret
   );
 
   res.cookie('staffToken', token, {
     httpOnly: true,
-    secure: false,
+    secure: config.auth.cookieSecure,
     maxAge: 24 * 60 * 60 * 1000,
     sameSite: 'lax'
   });
@@ -189,7 +190,6 @@ const respondToReview = asyncHandler(async (req, res) => {
     });
 
   } catch (error) {
-    console.log('ERROR STAFF RESPONDING TO REVIEW --->', error);
     await t.rollback();
     throw error;
   }
@@ -232,7 +232,6 @@ const changeStaffPassword = asyncHandler(async (req, res) => {
     });
 
   } catch (error) {
-    console.log('STAFF CHANGE PASSWORD ERROR --->', error);
     await t.rollback();
     throw error;
   }

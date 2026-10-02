@@ -1,9 +1,9 @@
 const Sib = require('sib-api-v3-sdk');
-require('dotenv').config();
+const { config } = require('../../config/appConfig');
 
 const client = Sib.ApiClient.instance;
 const apiKey = client.authentications['api-key'];
-apiKey.apiKey = process.env.SENDINBLUE_API_KEY;
+apiKey.apiKey = config.email.apiKey;
 
 const sendBookingConfirmationEmail = async (email, appointmentDetails) => {
     try {
@@ -11,8 +11,8 @@ const sendBookingConfirmationEmail = async (email, appointmentDetails) => {
 
         await tranEmailApi.sendTransacEmail({
             sender: {
-                email: 'deepainsaini111@gmail.com',
-                name: 'Salon Appointment App'
+                email: config.email.senderEmail,
+                name: config.email.senderName
             },
             to: [{ email }],
             subject: 'Appointment Booking Confirmation',
@@ -31,7 +31,7 @@ const sendBookingConfirmationEmail = async (email, appointmentDetails) => {
         console.log("Booking confirmation email sent");
 
     } catch (error) {
-        console.log("ERROR SENDING BOOKING EMAIL ---> ", error);
+        console.log("ERROR SENDING BOOKING EMAIL ---> ", error.response?.text || error.message);
     }
 };
 
@@ -41,8 +41,8 @@ const sendAppointmentReminderEmail = async (email, appointmentDetails) => {
 
         await tranEmailApi.sendTransacEmail({
             sender: {
-                email: 'deepainsaini111@gmail.com',
-                name: 'Salon Appointment App'
+                email: config.email.senderEmail,
+                name: config.email.senderName
             },
             to: [{ email }],
             subject: 'Appointment Reminder',
@@ -70,8 +70,8 @@ const sendForgotPasswordEmail = async (email, resetLink) => {
 
   await tranEmailApi.sendTransacEmail({
     sender: {
-      email: 'deepainsaini111@gmail.com',
-      name: 'Salon Appointment App'
+      email: config.email.senderEmail,
+      name: config.email.senderName
     },
     to: [
       {

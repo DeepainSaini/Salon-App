@@ -80,7 +80,6 @@ const markAppointmentCompleted = asyncHandler(async (req, res) => {
         res.status(200).json({message: 'Appointment marked as completed and invoice generated',appointment});
 
     } catch (error) {
-        console.log('ERROR MARKING APPOINTMENT COMPLETED --->',error);
         await t.rollback();
         throw error;
     }
@@ -141,7 +140,6 @@ const cancelAppointmentByAdmin = asyncHandler(async (req, res) => {
         });
 
     } catch (error) {
-        console.log("ADMIN CANCEL APPOINTMENT ERROR --->", error);
         await t.rollback();
         throw error;
     }
@@ -309,7 +307,6 @@ const rescheduleAppointmentByAdmin = asyncHandler(async (req, res) => {
         });
 
     } catch (error) {
-        console.log("ADMIN RESCHEDULE ERROR --->", error);
         await t.rollback();
         throw error;
     }

@@ -146,7 +146,6 @@ const postBookAppointment = asyncHandler(async (req, res) => {
         res.status(201).json({message: "appointment booked successfully",appointment: appointment,orderId,paymentSessionId});
 
     } catch (error) {
-        console.log("ERROR BOOKING APPOINTMENT ---> ", error);
         await t.rollback();
         throw error;
     }
@@ -208,7 +207,6 @@ const rescheduleAppointment = asyncHandler(async (req,res) => {
     }catch(error){
         
         await t.rollback();
-        console.log('RESCHEDULE ERROR --->', error);
         throw error;
     }
 });

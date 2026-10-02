@@ -13,17 +13,22 @@ const passwordRoutes = require('./routes/passwordRoutes');
 const staffRoutes = require('./routes/staffRoutes');
 const { startReminderCron } = require('./jobs/reminderEmailCronJob');
 const errorHandler = require('./middlewares/errorHandler');
+const { config } = require('./config/appConfig');
+const helmet  = require('helmet')
+const { apiLimiter } = require('./middlewares/rateLimiter');
 
 
 const app = express();
 
-app.use(cors({
-    origin: '*'
-}));
-
 app.use(express.json());
 app.use(cookieParser());
 
+app.use(helmet());
+app.use(apiLimiter)
+app.use(cors({
+    origin: config.cors.origin,
+    credentials: true
+}));
 
 app.use('/user',authRoutes);
 app.use('/user',customerRoutes);
@@ -44,13 +49,13 @@ db.sequelize.authenticate().then((result)=>{
     
     startReminderCron();
 
-    app.listen(3000,(err)=>{
+    app.listen(config.server.port,(err)=>{
 
-        console.log("SERVER IS RUNNING");
+        console.log(`SERVER IS RUNNING ON PORT ${config.server.port}`);
         
     });
 
 }).catch((error)=>{
 
-    console.log(error);
+    console.error('DATABASE CONNECTION ERROR --->', error.message);
 })

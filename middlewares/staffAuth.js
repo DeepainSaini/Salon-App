@@ -1,5 +1,6 @@
 const jwt = require('jsonwebtoken');
 const { Staff } = require('../models');
+const { config } = require('../config/appConfig');
 
 const authenticateStaff = async (req, res, next) => {
   try {
@@ -9,7 +10,7 @@ const authenticateStaff = async (req, res, next) => {
       return res.redirect('/staff/login');
     }
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET_KEY);
+    const decoded = jwt.verify(token, config.auth.jwtSecret);
 
     const staff = await Staff.findByPk(decoded.staffId);
 
@@ -33,7 +34,6 @@ const authenticateStaff = async (req, res, next) => {
     next();
 
   } catch (error) {
-    console.log('STAFF AUTH ERROR --->', error);
     return res.redirect('/staff/login');
   }
 };

@@ -39,22 +39,18 @@ loginForm.addEventListener('submit',(event)=>{
     }).catch((error)=>{
         
         const errorDiv = document.getElementById('errormsg');
+        const message = error.response?.data?.message || 'Login failed. Please try again.';
 
-        if(error.response.data.message === "user with email does not exixt"){
-              
+        if(message === "user with email does not exixt"){
             errorDiv.textContent = "USER DOES NOT EXIST."
-            setTimeout(()=>{
-                errorDiv.textContent = "";
-            },4000);
+        } else {
+            errorDiv.textContent = message;
         }
 
-        if(error.response.data.message === "incorrect password"){
-              
-            errorDiv.textContent = "INCORRECT PASSWORD."
-            setTimeout(()=>{
-                errorDiv.textContent = "";
-            },4000);
-        }
+        setTimeout(()=>{
+            errorDiv.textContent = "";
+        },4000);
+
         console.log("ERROR DURING LOGIN ---> ",error);
     })
 })

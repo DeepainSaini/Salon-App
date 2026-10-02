@@ -96,7 +96,6 @@ const updateService = asyncHandler(async (req, res) => {
 
   } catch (error) {
     await t.rollback()
-    console.log('ERROR UPDATING SERVICE --->', error);
     throw error;
   }
 });

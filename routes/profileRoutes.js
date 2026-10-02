@@ -3,12 +3,25 @@ const router = express.Router();
 
 const profileController = require('../controllers/profileController');
 const userAuthentication = require('../middlewares/auth');
+const { requireFields } = require('../middlewares/validateRequest');
+const { requireCustomer } = require('../middlewares/authorise');
 
-router.get('/profile', userAuthentication.authenticate, profileController.getProfilePage);
-router.post('/profile', userAuthentication.authenticate, profileController.postProfileDetails);
+router.use(userAuthentication.authenticate);
+router.use(requireCustomer);
 
-router.get('/profile/edit', userAuthentication.authenticate, profileController.getEditProfilePage);
-router.get('/profile/data', userAuthentication.authenticate, profileController.getProfileData);
-router.patch('/profile/update', userAuthentication.authenticate, profileController.updateProfile);
+router.get('/profile', profileController.getProfilePage);
+router.post(
+    '/profile',
+    requireFields(['phone', 'notification_preference']),
+    profileController.postProfileDetails
+);
+
+router.get('/profile/edit', profileController.getEditProfilePage);
+router.get('/profile/data', profileController.getProfileData);
+router.patch(
+    '/profile/update',
+    requireFields(['name', 'phone', 'notification_preference']),
+    profileController.updateProfile
+);
 
 module.exports = router;
