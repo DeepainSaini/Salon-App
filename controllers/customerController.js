@@ -3,6 +3,10 @@ const { Salons, Services, Appointments, Staff, Reviews, Invoice } = require('../
 const { Op } = require('sequelize');
 const { sequelize } = require('../models');
 const asyncHandler = require('../util/asyncHandler');
+const { getPagination, getPaginationMeta } = require('../util/pagination');
+const { deleteBookedSlotByAppointmentId } = require('../util/services/bookedSlotService');
+const { getCache, setCache } = require('../util/services/cacheServices');
+const logger = require('../util/logger');
 
 
 
@@ -12,8 +16,22 @@ const getCustomerDashboard = async (req,res) => {
 }
 
 const getDashboardData = asyncHandler(async (req, res) => {
-
+    
+    const { page, limit, offset } = getPagination(req.query);
     const { search } = req.query;
+
+    const searchText = search || 'all';
+    const cacheKey = `salons:search:${searchText}:page:${page}:limit:${limit}`;
+    const startTime = Date.now();
+    const cachedData = await getCache(cacheKey);
+
+    if (cachedData) {
+        logger.info('CACHE HIT', {
+            key: cacheKey,
+            durationMs: Date.now() - startTime
+        });
+        return res.status(200).json(cachedData);
+    }
 
     const whereCondition = {};
 
@@ -23,13 +41,25 @@ const getDashboardData = asyncHandler(async (req, res) => {
         };
     }
 
-    const salons = await Salons.findAll({
-        where: whereCondition
+    const { count, rows: salons } = await Salons.findAndCountAll({
+        where: whereCondition,
+        limit,
+        offset,
+        order: [['name', 'ASC']]
     });
 
-    res.status(200).json({
-        salons: salons
+    const responseData = {
+        salons,
+        pagination: getPaginationMeta(count, page, limit)
+    };
+
+    await setCache(cacheKey, responseData, 300);
+    logger.info('CACHE MISS', {
+        key: cacheKey,
+        durationMs: Date.now() - startTime
     });
+
+    res.status(200).json(responseData);
 
 });
 
@@ -41,19 +71,21 @@ const getSalonServicesPage = (req, res) => {
 const getSalonServices = asyncHandler(async (req, res) => {
 
     const salonId = req.params.salonId;
+    const { page, limit, offset } = getPagination(req.query);
+    const cacheKey = `salon:${salonId}:services:page:${page}:limit:${limit}`;
+    const startTime = Date.now();
 
-    const salon = await Salons.findByPk(salonId, {
-        include: [
-            {
-                model: Services,
-                as: 'services',
-                where: {
-                    is_active: true
-                },
-                required: false
-            }
-        ]
-    });
+    const cachedData = await getCache(cacheKey);
+
+    if (cachedData) {
+        logger.info('CACHE HIT', {
+            key: cacheKey,
+            durationMs: Date.now() - startTime
+        });
+        return res.status(200).json(cachedData);
+    }
+
+    const salon = await Salons.findByPk(salonId);
 
     if (!salon) {
         return res.status(404).json({
@@ -61,20 +93,41 @@ const getSalonServices = asyncHandler(async (req, res) => {
         });
     }
 
-    res.status(200).json({
-        salon: salon,
-        services: salon.services
+    const { count, rows: services } = await Services.findAndCountAll({
+        where: {
+            salonId,
+            is_active: true
+        },
+        order: [['name', 'ASC']],
+        limit,
+        offset,
+        distinct: true
     });
+
+    const responseData = {
+        salon: salon,
+        services,
+        pagination: getPaginationMeta(count, page, limit)
+    };
+
+    await setCache(cacheKey, responseData, 300);
+    logger.info('CACHE MISS', {
+        key: cacheKey,
+        durationMs: Date.now() - startTime
+    });
+
+    res.status(200).json(responseData);
 
 });
 
 const getMyAppointments = asyncHandler(async (req, res) => {
-
-    const appointments = await Appointments.findAll({
+    
+    const { page, limit, offset } = getPagination(req.query);
+    const { count, rows: appointments } = await Appointments.findAndCountAll({
         where: {
             userId: req.user.id,
             status: {
-                [Op.in]: ['booked', 'completed', 'cancelled']
+            [Op.in]: ['booked', 'completed', 'cancelled']
             },
             paymentStatus: 'paid'
         },
@@ -82,14 +135,18 @@ const getMyAppointments = asyncHandler(async (req, res) => {
             { model: Salons, as: 'salon' },
             { model: Services, as: 'service' },
             { model: Staff, as: 'staff' },
-            {model: Reviews, as: 'review', required: false},
+            { model: Reviews, as: 'review', required: false },
             { model: Invoice, as: 'invoice', required: false }
         ],
-        order: [['appointment_date', 'ASC'], ['appointment_time', 'ASC']]
+        order: [['appointment_date', 'DESC'], ['appointment_time', 'DESC']],
+        limit,
+        offset,
+        distinct: true
     });
 
     res.status(200).json({
-        appointments
+        appointments,
+        pagination: getPaginationMeta(count, page, limit)
     });
 
 });
@@ -137,6 +194,7 @@ const cancelAppointment = asyncHandler(async (req, res) => {
         appointment.reminder_sent = true;
 
         await appointment.save({transaction: t});
+        await deleteBookedSlotByAppointmentId(appointment.id, t);
         await t.commit();
 
         res.status(200).json({

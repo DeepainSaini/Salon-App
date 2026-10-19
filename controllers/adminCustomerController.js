@@ -1,6 +1,7 @@
 const path = require('path');
 const {Users,Salons,Services,Staff,Appointments,Reviews,Invoice} = require('../models');
 const asyncHandler = require('../util/asyncHandler');
+const { getPagination, getPaginationMeta } = require('../util/pagination');
 
 const getCustomerDetailsPage = (req, res) => {
   res.sendFile(path.join(__dirname, '../', 'views', 'adminCustomerDetails.html'));
@@ -9,6 +10,7 @@ const getCustomerDetailsPage = (req, res) => {
 const getCustomerDetailsData = asyncHandler(async (req, res) => {
     
   const customerId = req.params.id;
+  const { page, limit, offset } = getPagination(req.query);
 
   const salon = await Salons.findOne({
     where: {
@@ -32,7 +34,7 @@ const getCustomerDetailsData = asyncHandler(async (req, res) => {
     });
   }
 
-  const appointments = await Appointments.findAll({
+  const { count, rows: appointments } = await Appointments.findAndCountAll({
     where: {
       salonId: salon.id,
       userId: customerId,
@@ -44,7 +46,10 @@ const getCustomerDetailsData = asyncHandler(async (req, res) => {
       { model: Reviews, as: 'review', required: false },
       { model: Invoice, as: 'invoice', required: false }
     ],
-    order: [['appointment_date', 'DESC'], ['appointment_time', 'DESC']]
+    order: [['appointment_date', 'DESC'], ['appointment_time', 'DESC']],
+    limit,
+    offset,
+    distinct: true
   });
 
   if (appointments.length === 0) {
@@ -55,7 +60,8 @@ const getCustomerDetailsData = asyncHandler(async (req, res) => {
 
   res.status(200).json({
     customer,
-    appointments
+    appointments,
+    pagination: getPaginationMeta(count, page, limit)
   });
 
 });

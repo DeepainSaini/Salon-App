@@ -15,6 +15,10 @@ The app supports three roles: customer, salon admin, and staff. Customers can se
 - Email: Brevo transactional email API
 - Scheduling: node-cron
 - Invoices: PDF generation with pdfkit
+- Caching: Redis (local server or Redis Cloud), node-redis client
+- Logging: Winston
+- Security: Helmet, express-rate-limit, request validation
+- Response compression: compression
 - Version Control: Git and GitHub
 
 ## Roles
@@ -92,7 +96,10 @@ The app supports three roles: customer, salon admin, and staff. Customers can se
   - service duration
   - already booked appointments
   - past time slots for today's date
-- The same staff member cannot be double-booked for the same date and time
+- Staff reservations are stored separately in `BookedSlots`, including start and end times
+- Availability and booking checks exclude overlapping reservations, including bookings for other services assigned to the same staff member
+- A database unique constraint prevents duplicate staff/date/start-time reservations; another permits only one reservation per appointment
+- Arbitrary concurrent overlaps with different start times still need stronger database concurrency protection (see Future Improvements)
 
 ### Payments
 
@@ -127,6 +134,27 @@ The app supports three roles: customer, salon admin, and staff. Customers can se
 - PDF invoices are saved under the public invoice folder
 - Customers and admins can access invoice links from appointment details
 
+### Performance and Caching
+
+- Paginated salon search, service listings, and appointment lists limit response sizes
+- Database indexes support appointment filters and reservation lookups
+- Redis caches salon search results and salon service listings for 300 seconds
+- Cache keys include search terms, salon IDs, and pagination parameters as applicable
+- On a cache miss, the controller queries MySQL and stores the response in Redis
+- Salon and service changes trigger cache invalidation
+- Cache helpers catch Redis command errors and allow database reads to continue; the current application startup still requires Redis to connect
+- Winston records cache hits, misses, and lookup durations for performance investigation
+
+### Security and Error Handling
+
+- Role authorization and ownership checks restrict access to salon, customer, and staff resources
+- Request validation checks required fields and password strength
+- Helmet sets security headers and a Content Security Policy configured for Cashfree checkout
+- Rate limits protect API and authentication endpoints
+- JSON request bodies are limited to 100 KB
+- Central error handling and response helpers keep API errors consistent
+- Winston writes JSON logs to `logs/combined.log` and `logs/error.log`, with console output during development
+
 ## Database Overview
 
 - `Users`: customer and admin accounts
@@ -135,6 +163,7 @@ The app supports three roles: customer, salon admin, and staff. Customers can se
 - `Staffs`: staff profiles and login details
 - `StaffServices`: many-to-many relation between staff and services
 - `Appointments`: bookings, status, payment data, and booking price snapshot
+- `BookedSlots`: staff reservations with appointment date, start time, and end time
 - `Reviews`: customer reviews and staff responses
 - `Invoices`: invoice details linked to completed appointments
 - `PasswordReqs`: forgot password reset requests
@@ -183,15 +212,23 @@ booked
 completed
 cancelled
 payment_failed
+slot_conflict
 ```
 
-Only paid/booked appointments are shown in the main customer and admin appointment lists.
+Main appointment lists exclude unpaid bookings and display paid appointments grouped by status.
+`slot_conflict` records a successful payment whose requested slot was already reserved when payment was verified; automated refund handling is not implemented.
 
 ## Environment Variables
 
-Create a `.env` file in the project root.
+Copy `.env.example` to `.env` in the project root and replace the placeholder values. Configuration is read through `config/appConfig.js`; Sequelize CLI keeps its own database configuration entry point.
 
 ```env
+NODE_ENV=development
+PORT=3000
+APP_BASE_URL=http://localhost:3000
+CORS_ORIGIN=http://localhost:3000
+COOKIE_SECURE=false
+
 DB_USERNAME=your_mysql_username
 DB_PASSWORD=your_mysql_password
 DB_NAME=salon_db
@@ -204,11 +241,20 @@ CASHFREE_APP_ID=your_cashfree_app_id
 CASHFREE_SECRET_KEY=your_cashfree_secret_key
 
 SENDINBLUE_API_KEY=your_brevo_api_key
+EMAIL_SENDER_EMAIL=your_verified_sender@example.com
+EMAIL_SENDER_NAME=Salon Appointment App
+CASHFREE_ENVIRONMENT=sandbox
+
+REDIS_URL=redis://localhost:6379
 ```
 
-Do not commit the `.env` file.
+For Redis Cloud, use the connection URL provided by your database, including credentials and the appropriate `redis://` or `rediss://` scheme. Installing the npm `redis` package installs the client only; a running Redis server is also required.
+
+Do not commit `.env`, credentials, or generated logs. Use your deployed frontend origin and secure cookies when configuring HTTPS deployment.
 
 ## Installation and Setup
+
+Prerequisites: Node.js and npm, a MySQL database, a reachable Redis server, Cashfree sandbox credentials, and a Brevo API key with a verified sender.
 
 Install dependencies:
 
@@ -234,6 +280,18 @@ Open the app:
 http://localhost:3000
 ```
 
+The backend connects to MySQL and Redis before starting the HTTP server and reminder cron job. For a direct run without nodemon, use `node app.js`.
+
+## Tests
+
+Run the existing regression tests:
+
+```bash
+npm test
+```
+
+These cover time helpers, configuration, pagination, availability calculations, error helpers, request validation, and response helpers. They do not replace integration tests against MySQL, Redis, or Cashfree.
+
 ## Project Structure
 
 ```text
@@ -247,15 +305,22 @@ public/js/          Frontend JavaScript
 public/invoices/    Generated invoice PDFs
 jobs/               Cron reminder job
 util/services/      Email, payment, and invoice services
-config/             Sequelize database config
+util/               Logging, Redis client, pagination, and shared helpers
+middlewares/        Authentication, authorization, validation, and error handling
+tests/              Automated regression tests
+config/             Application and Sequelize database configuration
 ```
 
 ## Future Improvements
 
 - Add Cashfree webhook support for more reliable payment status updates
 - Add SMS notifications
-- Add automated tests
-- Add centralized error-handling middleware
-- Add stronger production role-based authorization
+- Add integration tests for payment callbacks, cache invalidation, and concurrent bookings
+- Serialize reservations per staff member or use another database strategy to prevent concurrent overlapping bookings with different start times
+- Add Docker packaging and a reproducible container setup
+- Add background queues for email and other external service work
+- Add log rotation and deployment log collection
 - Deploy the application on AWS
 - Improve UI responsiveness and accessibility
+
+Docker, Kubernetes, and capacity for 100,000 users have not been implemented or verified. Load testing and deployment measurements are needed before making capacity claims.

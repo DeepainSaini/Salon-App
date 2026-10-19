@@ -2,6 +2,7 @@ const path = require('path');
 const { Salons, Services } = require('../models');
 const { sequelize } = require('../models');
 const asyncHandler = require('../util/asyncHandler');
+const { deleteCacheByPattern } = require('../util/services/cacheServices');
 
 const getEditServicePage = (req, res) => {
   res.sendFile(path.join(__dirname, '../', 'views', 'editService.html'));
@@ -88,6 +89,7 @@ const updateService = asyncHandler(async (req, res) => {
 
     await service.save({transaction:t});
     await t.commit();
+    await deleteCacheByPattern(`salon:${salon.id}:services:*`);
 
     res.status(200).json({
       message: 'service updated successfully',

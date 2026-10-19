@@ -1,6 +1,7 @@
 const {Op} = require('sequelize');
-const {Services,Staff,Appointments} = require('../../models');
+const {Services,Staff,BookedSlots} = require('../../models');
 const {timeToMinutes, minutesToTime} = require('../timeHelpers');
+const { calculateEndTime } = require('./bookedSlotService');
 
 const getAvailableSlotsForService = async ({ salonId, serviceId, date, excludeAppointmentId }) => {
     const service = await Services.findOne({
@@ -42,27 +43,23 @@ const getAvailableSlotsForService = async ({ salonId, serviceId, date, excludeAp
         };
     }
 
-    const bookedWhere = {
-        salonId,
-        serviceId,
-        appointment_date: date,
-        status: {
-            [Op.in]: ['booked']
-        }
-    };
+    const staffIds = staffList.map((staff) => staff.id);
 
+    const bookedWhere = {
+        staffId: {
+            [Op.in]: staffIds
+        },
+        appointment_date: date
+    };
+    
     if (excludeAppointmentId) {
-        bookedWhere.id = {
+        bookedWhere.appointmentId = {
             [Op.ne]: excludeAppointmentId
         };
     }
 
-    const bookedAppointments = await Appointments.findAll({
+    const bookedSlots = await BookedSlots.findAll({
       where: bookedWhere
-    });
-
-    const bookedSlots = bookedAppointments.map((appointment) => {
-        return `${appointment.staffId}-${appointment.appointment_time.slice(0, 5)}`;
     });
 
     const slots = [];
@@ -82,14 +79,21 @@ const getAvailableSlotsForService = async ({ salonId, serviceId, date, excludeAp
 
         for (let time = startMinutes; time + duration <= endMinutes; time += duration) {
             const slotTime = minutesToTime(time);
+            const slotEndTime = calculateEndTime(slotTime, duration);
 
             if (date === today && slotTime <= currentTime) {
                 continue;
             }
 
-            const slotKey = `${staff.id}-${slotTime}`;
+            const hasOverlap = bookedSlots.some((bookedSlot) => {
+                return (
+                    bookedSlot.staffId === staff.id &&
+                    slotTime < bookedSlot.end_time.slice(0, 5) &&
+                    slotEndTime > bookedSlot.start_time.slice(0, 5)
+                );
+            });
 
-            if (!bookedSlots.includes(slotKey)) {
+            if (!hasOverlap) {
                 slots.push({
                     time: slotTime,
                     staffId: staff.id,

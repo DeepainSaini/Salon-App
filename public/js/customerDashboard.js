@@ -1,3 +1,11 @@
+let appointmentPage = 1;
+const appointmentLimit = 10;
+let appointmentTotalPages = 1;
+let salonPage = 1;
+const salonLimit = 10;
+let salonTotalPages = 1;
+let currentSalonSearch = '';
+
 document.getElementsByTagName('h1')[0].innerHTML = `WELCOME ${localStorage.getItem('name')}`; 
 const accountBtn = document.getElementById('account-menu-btn');
 const accountDropdown = document.getElementById('account-dropdown');
@@ -19,11 +27,13 @@ window.addEventListener('DOMContentLoaded', async () => {
 
 document.getElementById('salon-search-btn').addEventListener('click', () => {
     const search = document.getElementById('salon-search-input').value.trim();
+    salonPage = 1;
     loadSalons(search);
 });
 
 document.getElementById('clear-search-btn').addEventListener('click', () => {
     document.getElementById('salon-search-input').value = '';
+    salonPage = 1;
     loadSalons();
 });
 
@@ -34,14 +44,20 @@ document.getElementById('salon-search-input').addEventListener('input', (event) 
 
     searchTimer = setTimeout(() => {
         const search = event.target.value.trim();
+        salonPage = 1;
         loadSalons(search);
     }, 300);
 });
 
 async function loadSalons(search = '') {
     try {
-        const response = await axios.get(`/user/dashboard-data?search=${search}`);
-        showSalons(response.data.salons);
+        currentSalonSearch = search;
+        const response = await axios.get(`/user/dashboard-data?search=${encodeURIComponent(currentSalonSearch)}&page=${salonPage}&limit=${salonLimit}`);
+        const salons = response.data.salons;
+        const pagination = response.data.pagination;
+        salonTotalPages = pagination.totalPages;
+        showSalons(salons);
+        showSalonPagination();
     } catch (error) {
         console.log("ERROR LOADING SALONS ---> ", error);
     }
@@ -68,10 +84,14 @@ function showSalons(salons) {
             <p><strong>Contact Number: </strong> ${salon.phone}</p>
             <p><strong>Open:</strong> ${salon.open_time} - ${salon.close_time}</p>
 
-            <button onclick="viewSalonServices(${salon.id})">
+            <button class="view-services-btn" data-salon-id="${salon.id}">
                 View Services
             </button>
         `;
+
+        salonCard.querySelector('.view-services-btn').addEventListener('click', () => {
+            viewSalonServices(salon.id);
+        });
 
         salonsList.appendChild(salonCard);
     });
@@ -79,8 +99,12 @@ function showSalons(salons) {
 
 async function loadMyAppointments() {
     try {
-        const response = await axios.get('/user/my-appointments');
-        showMyAppointments(response.data.appointments);
+        const response = await axios.get(`/user/my-appointments?page=${appointmentPage}&limit=${appointmentLimit}`);
+        const appointments = response.data.appointments;
+        const pagination = response.data.pagination;
+        appointmentTotalPages = pagination.totalPages;
+        showMyAppointments(appointments);
+        showAppointmentPagination();
     } catch (error) {
         console.log("ERROR LOADING APPOINTMENTS ---> ", error);
     }
@@ -148,15 +172,16 @@ function renderAppointmentCards(appointments, container) {
         if (appointment.status === 'booked' && appointment.paymentStatus === 'paid') {
         
             actions = `
-                <button onclick="cancelAppointment(${appointment.id})">
+                <button class="cancel-appointment-btn" data-appointment-id="${appointment.id}">
                 Cancel Appointment
                 </button>
 
-                <button onclick="rescheduleAppointment(
-                ${appointment.id},
-                ${appointment.salonId},
-                ${appointment.serviceId}
-                )">
+                <button 
+                    class="reschedule-appointment-btn" 
+                    data-appointment-id="${appointment.id}"
+                    data-salon-id="${appointment.salonId}"
+                    data-service-id="${appointment.serviceId}"
+                >
                 Reschedule
                 </button>
             `;
@@ -181,11 +206,11 @@ function renderAppointmentCards(appointments, container) {
                     ${
                         !appointment.review.staffResponse
                             ? `
-                            <button onclick="openEditReviewPage(${appointment.review.id})">
+                            <button class="edit-review-btn" data-review-id="${appointment.review.id}">
                                 Edit Review
                             </button>
 
-                            <button onclick="deleteReview(${appointment.review.id})">
+                            <button class="delete-review-btn" data-review-id="${appointment.review.id}">
                                 Delete Review
                             </button>
                             `
@@ -213,7 +238,7 @@ function renderAppointmentCards(appointments, container) {
             } else {
 
                 actions = `
-                <button onclick="openReviewPage(${appointment.id})">
+                <button class="leave-review-btn" data-appointment-id="${appointment.id}">
                     Leave Review
                 </button>
                 `;
@@ -235,6 +260,41 @@ function renderAppointmentCards(appointments, container) {
 
         ${actions}
         `;
+
+        const cancelBtn = div.querySelector('.cancel-appointment-btn');
+        if (cancelBtn) {
+            cancelBtn.addEventListener('click', () => {
+                cancelAppointment(appointment.id);
+            });
+        }
+
+        const rescheduleBtn = div.querySelector('.reschedule-appointment-btn');
+        if (rescheduleBtn) {
+            rescheduleBtn.addEventListener('click', () => {
+                rescheduleAppointment(appointment.id, appointment.salonId, appointment.serviceId);
+            });
+        }
+
+        const editReviewBtn = div.querySelector('.edit-review-btn');
+        if (editReviewBtn) {
+            editReviewBtn.addEventListener('click', () => {
+                openEditReviewPage(appointment.review.id);
+            });
+        }
+
+        const deleteReviewBtn = div.querySelector('.delete-review-btn');
+        if (deleteReviewBtn) {
+            deleteReviewBtn.addEventListener('click', () => {
+                deleteReview(appointment.review.id);
+            });
+        }
+
+        const leaveReviewBtn = div.querySelector('.leave-review-btn');
+        if (leaveReviewBtn) {
+            leaveReviewBtn.addEventListener('click', () => {
+                openReviewPage(appointment.id);
+            });
+        }
 
         container.appendChild(div);
     });
@@ -291,6 +351,58 @@ async function rescheduleAppointment(appointmentId, salonId, serviceId) {
 
 function viewSalonServices(salonId) {
     window.location.href = `/user/salon/${salonId}`;
+}
+
+function showAppointmentPagination() {
+  const paginationDiv = document.getElementById('appointments-pagination');
+
+  if (!paginationDiv) return;
+
+  paginationDiv.innerHTML = `
+    <button id="prev-appointment-page" ${appointmentPage === 1 ? 'disabled' : ''}>Previous</button>
+    <span>Page ${appointmentPage} of ${appointmentTotalPages || 1}</span>
+    <button id="next-appointment-page" ${appointmentPage >= appointmentTotalPages ? 'disabled' : ''}>Next</button>
+  `;
+
+  document.getElementById('prev-appointment-page').addEventListener('click', () => {
+    if (appointmentPage > 1) {
+      appointmentPage--;
+      loadMyAppointments();
+    }
+  });
+
+  document.getElementById('next-appointment-page').addEventListener('click', () => {
+    if (appointmentPage < appointmentTotalPages) {
+      appointmentPage++;
+      loadMyAppointments();
+    }
+  });
+}
+
+function showSalonPagination() {
+  const paginationDiv = document.getElementById('salons-pagination');
+
+  if (!paginationDiv) return;
+
+  paginationDiv.innerHTML = `
+    <button id="prev-salon-page" ${salonPage === 1 ? 'disabled' : ''}>Previous</button>
+    <span>Page ${salonPage} of ${salonTotalPages || 1}</span>
+    <button id="next-salon-page" ${salonPage >= salonTotalPages ? 'disabled' : ''}>Next</button>
+  `;
+
+  document.getElementById('prev-salon-page').addEventListener('click', () => {
+    if (salonPage > 1) {
+      salonPage--;
+      loadSalons(currentSalonSearch);
+    }
+  });
+
+  document.getElementById('next-salon-page').addEventListener('click', () => {
+    if (salonPage < salonTotalPages) {
+      salonPage++;
+      loadSalons(currentSalonSearch);
+    }
+  });
 }
 
 document.getElementById('logout-btn').addEventListener('click', async (event) => {

@@ -40,6 +40,12 @@ module.exports = (sequelize, DataTypes) => {
         foreignKey: 'appointmentId',
         as: 'review'
       });
+
+      Appointments.hasOne(models.BookedSlots, {
+        foreignKey: 'appointmentId',
+        as: 'bookedSlot'
+      });
+      
     }
   }
   Appointments.init({

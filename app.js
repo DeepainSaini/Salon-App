@@ -16,14 +16,52 @@ const errorHandler = require('./middlewares/errorHandler');
 const { config } = require('./config/appConfig');
 const helmet  = require('helmet')
 const { apiLimiter } = require('./middlewares/rateLimiter');
+const { connectRedis } = require('./util/redisClient');
+const logger = require('./util/logger');
+const compression = require('compression');
 
 
 const app = express();
 
-app.use(express.json());
+app.use(express.json({ limit: '100kb' }));
 app.use(cookieParser());
 
-app.use(helmet());
+app.use(
+  helmet({
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+
+        scriptSrc: ["'self'", "https://sdk.cashfree.com"],
+
+        connectSrc: [
+          "'self'",
+          "https://sdk.cashfree.com",
+          "https://sandbox.cashfree.com",
+          "https://api.cashfree.com"
+        ],
+
+        frameSrc: [
+          "'self'",
+          "https://sdk.cashfree.com",
+          "https://sandbox.cashfree.com",
+          "https://payments.cashfree.com"
+        ],
+
+        formAction: [
+          "'self'",
+          "https://sandbox.cashfree.com",
+          "https://payments.cashfree.com"
+        ],
+
+        imgSrc: ["'self'", "data:"],
+
+        styleSrc: ["'self'", "'unsafe-inline'"]
+      }
+    }
+  })
+);
+app.use(compression());
 app.use(apiLimiter)
 app.use(cors({
     origin: config.cors.origin,
@@ -45,17 +83,18 @@ app.use(errorHandler);
 
 
 
-db.sequelize.authenticate().then((result)=>{
+db.sequelize.authenticate().then(async (result)=>{
     
+    await connectRedis();  
     startReminderCron();
 
     app.listen(config.server.port,(err)=>{
 
-        console.log(`SERVER IS RUNNING ON PORT ${config.server.port}`);
+        logger.info(`SERVER IS RUNNING ON PORT ${config.server.port}`);
         
     });
 
 }).catch((error)=>{
 
-    console.error('DATABASE CONNECTION ERROR --->', error.message);
+    logger.error('DATABASE CONNECTION ERROR', { error: error.message });
 })

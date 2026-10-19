@@ -1,18 +1,28 @@
 const pathParts = window.location.pathname.split('/');
 const customerId = pathParts[pathParts.indexOf('customers') + 1];
 
-window.addEventListener('DOMContentLoaded', async () => {
+let appointmentPage = 1;
+const appointmentLimit = 10;
+let appointmentTotalPages = 1;
+
+window.addEventListener('DOMContentLoaded', loadCustomerDetails);
+
+async function loadCustomerDetails() {
   try {
-    const response = await axios.get(`/admin/customers/${customerId}/data`);
+    const response = await axios.get(
+      `/admin/customers/${customerId}/data?page=${appointmentPage}&limit=${appointmentLimit}`
+    );
 
     showCustomerInfo(response.data.customer);
     showCustomerAppointments(response.data.appointments);
+    appointmentTotalPages = response.data.pagination?.totalPages || 1;
+    showAppointmentsPagination();
 
   } catch (error) {
     console.log('ERROR LOADING CUSTOMER DETAILS --->', error);
     alert(error.response?.data?.message || 'Could not load customer details');
   }
-});
+}
 
 function showCustomerInfo(customer) {
   document.getElementById('customer-info').innerHTML = `
@@ -68,5 +78,33 @@ function showCustomerAppointments(appointments) {
     `;
 
     container.appendChild(div);
+  });
+}
+
+function showAppointmentsPagination() {
+  const paginationDiv = document.getElementById('customer-appointments-pagination');
+
+  if (!paginationDiv) {
+    return;
+  }
+
+  paginationDiv.innerHTML = `
+    <button id="customer-appointments-prev" ${appointmentPage === 1 ? 'disabled' : ''}>Previous</button>
+    <span>Page ${appointmentPage} of ${appointmentTotalPages || 1}</span>
+    <button id="customer-appointments-next" ${appointmentPage >= appointmentTotalPages ? 'disabled' : ''}>Next</button>
+  `;
+
+  document.getElementById('customer-appointments-prev').addEventListener('click', () => {
+    if (appointmentPage > 1) {
+      appointmentPage--;
+      loadCustomerDetails();
+    }
+  });
+
+  document.getElementById('customer-appointments-next').addEventListener('click', () => {
+    if (appointmentPage < appointmentTotalPages) {
+      appointmentPage++;
+      loadCustomerDetails();
+    }
   });
 }

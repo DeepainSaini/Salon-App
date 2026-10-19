@@ -1,17 +1,29 @@
-window.addEventListener('DOMContentLoaded', async () => {
-    try {
-        const pathParts = window.location.pathname.split('/');
-        const salonId = pathParts[pathParts.length - 1];
+let servicesPage = 1;
+const servicesLimit = 10;
+let servicesTotalPages = 1;
+let salonId;
 
-        const response = await axios.get(`/user/salon/${salonId}/services`);
+window.addEventListener('DOMContentLoaded', () => {
+    const pathParts = window.location.pathname.split('/');
+    salonId = pathParts[pathParts.length - 1];
+    loadSalonServices();
+});
+
+async function loadSalonServices() {
+    try {
+        const response = await axios.get(
+            `/user/salon/${salonId}/services?page=${servicesPage}&limit=${servicesLimit}`
+        );
 
         showSalonDetails(response.data.salon);
         showServices(response.data.services, salonId);
+        servicesTotalPages = response.data.pagination?.totalPages || 1;
+        showServicesPagination();
 
     } catch (error) {
         console.log("ERROR LOADING SALON SERVICES ---> ", error);
     }
-});
+}
 
 function showSalonDetails(salon) {
     document.getElementById('salon-name').textContent = salon.name;
@@ -42,10 +54,14 @@ function showServices(services, salonId) {
             <p><strong>Duration:</strong> ${service.duration} minutes</p>
             <p><strong>Price:</strong> ₹${service.price}</p>
 
-            <button onclick="bookService(${salonId}, ${service.id})">
+            <button class="book-service-btn" data-service-id="${service.id}">
                 Book Now
             </button>
         `;
+
+        serviceCard.querySelector('.book-service-btn').addEventListener('click', () => {
+            bookService(salonId, service.id);
+        });
 
         servicesList.appendChild(serviceCard);
     });
@@ -53,4 +69,32 @@ function showServices(services, salonId) {
 
 function bookService(salonId, serviceId) {
     window.location.href = `/user/bookAppointment?salonId=${salonId}&serviceId=${serviceId}`;
+}
+
+function showServicesPagination() {
+    const paginationDiv = document.getElementById('services-pagination');
+
+    if (!paginationDiv) {
+        return;
+    }
+
+    paginationDiv.innerHTML = `
+        <button id="services-prev-page" ${servicesPage === 1 ? 'disabled' : ''}>Previous</button>
+        <span>Page ${servicesPage} of ${servicesTotalPages || 1}</span>
+        <button id="services-next-page" ${servicesPage >= servicesTotalPages ? 'disabled' : ''}>Next</button>
+    `;
+
+    document.getElementById('services-prev-page').addEventListener('click', () => {
+        if (servicesPage > 1) {
+            servicesPage--;
+            loadSalonServices();
+        }
+    });
+
+    document.getElementById('services-next-page').addEventListener('click', () => {
+        if (servicesPage < servicesTotalPages) {
+            servicesPage++;
+            loadSalonServices();
+        }
+    });
 }

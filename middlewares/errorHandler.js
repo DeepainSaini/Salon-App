@@ -1,8 +1,14 @@
 const { errorResponse } = require('../util/apiResponse');
 const { config } = require('../config/appConfig');
+const logger = require('../util/logger');
 
 const errorHandler = (error, req, res, next) => {
-    console.error('ERROR --->', error);
+    logger.error('REQUEST ERROR', {
+        method: req.method,
+        path: req.originalUrl,
+        error: error.message,
+        stack: error.stack
+    });
 
     const statusCode = error.statusCode || 500;
     const message =

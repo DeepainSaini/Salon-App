@@ -2,6 +2,7 @@ const path = require('path');
 const {Salons} = require('../models');
 const { sequelize } = require('../models');
 const asyncHandler = require('../util/asyncHandler');
+const { deleteCacheByPattern } = require('../util/services/cacheServices');
 
 const getAdminDetailsForm = async (req,res) => {
     res.sendFile(path.join(__dirname,'../','views','salonDetails.html'));
@@ -29,6 +30,7 @@ const postSalonDetails = asyncHandler(async (req,res) => {
         }, { transaction: t });
 
          await t.commit();
+         await deleteCacheByPattern('salons:search:*');
 
         return res.status(201).json({
             success: true,
@@ -115,6 +117,9 @@ const updateSalonDetails = asyncHandler(async (req, res) => {
     await salon.save({transaction:t});
     
     await t.commit()
+    await deleteCacheByPattern('salons:search:*');
+    await deleteCacheByPattern(`salon:${salon.id}:services:*`);
+
     res.status(200).json({
       message: 'salon details updated successfully',
       salon

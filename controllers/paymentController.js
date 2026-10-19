@@ -3,6 +3,11 @@ const {Salons,Services,Staff,Appointments} = require('../models');
 const { sequelize } = require('../models');
 const { sendBookingConfirmationEmail } = require('../util/services/emailServices');
 const { getPaymentStatus } = require('../util/services/cashfreeServices');
+const {
+    calculateEndTime,
+    findOverlappingBookedSlot,
+    createBookedSlot
+} = require('../util/services/bookedSlotService');
 const asyncHandler = require('../util/asyncHandler');
 
 const paymentStatus = asyncHandler(async (req, res) => {
@@ -33,9 +38,45 @@ const paymentStatus = asyncHandler(async (req, res) => {
             });
         }
 
+        if (appointment.status === 'booked' && appointment.paymentStatus === 'paid') {
+            await t.commit();
+            return res.redirect('/user/dashboard');
+        }
+
         appointment.paymentStatus = status;
 
         if (status === 'paid') {
+            const startTime = appointment.appointment_time.slice(0, 5);
+            const endTime = calculateEndTime(startTime, appointment.service.duration);
+
+            const overlappingBookedSlot = await findOverlappingBookedSlot({
+                staffId: appointment.staffId,
+                appointment_date: appointment.appointment_date,
+                start_time: startTime,
+                end_time: endTime,
+                excludeAppointmentId: appointment.id,
+                transaction: t
+            });
+
+            if (overlappingBookedSlot) {
+                appointment.status = 'slot_conflict';
+                appointment.paymentStatus = 'paid';
+
+                await appointment.save({ transaction: t });
+                await t.commit();
+
+                return res.redirect('/user/dashboard?payment=slot_conflict');
+            }
+
+            await createBookedSlot({
+                staffId: appointment.staffId,
+                appointmentId: appointment.id,
+                appointment_date: appointment.appointment_date,
+                start_time: startTime,
+                end_time: endTime,
+                transaction: t
+            });
+
             await sendBookingConfirmationEmail(req.user.email, {
                 salonName: appointment.salon.name,
                 serviceName: appointment.service.name,

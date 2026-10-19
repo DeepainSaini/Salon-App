@@ -4,6 +4,12 @@ const { Op } = require('sequelize');
 const { sequelize } = require('../models');
 const { createOrder } = require('../util/services/cashfreeServices');
 const { getAvailableSlotsForService } = require('../util/services/availabilityService');
+const {
+    calculateEndTime,
+    findOverlappingBookedSlot,
+    createBookedSlot,
+    deleteBookedSlotByAppointmentId
+} = require('../util/services/bookedSlotService');
 const asyncHandler = require('../util/asyncHandler');
 
 
@@ -91,6 +97,7 @@ const postBookAppointment = asyncHandler(async (req, res) => {
         }
 
         const selectedTime = appointment_time.slice(0, 5);
+        const selectedEndTime = calculateEndTime(selectedTime, service.duration);
         const staffStart = staff.available_from.slice(0, 5);
         const staffEnd = staff.available_to.slice(0, 5);
 
@@ -98,6 +105,21 @@ const postBookAppointment = asyncHandler(async (req, res) => {
             await t.rollback();
             return res.status(400).json({
                 message: "selected time is outside staff availability"
+            });
+        }
+
+        const overlappingBookedSlot = await findOverlappingBookedSlot({
+            staffId,
+            appointment_date,
+            start_time: selectedTime,
+            end_time: selectedEndTime,
+            transaction: t
+        });
+
+        if (overlappingBookedSlot) {
+            await t.rollback();
+            return res.status(409).json({
+                message: "This slot overlaps with an existing booking"
             });
         }
 
@@ -166,7 +188,10 @@ const rescheduleAppointment = asyncHandler(async (req,res) => {
                 userId: req.user.id,
                 status: 'booked',
                 paymentStatus: 'paid'
-            }
+            },
+            include: [
+                { model: Services, as: 'service' }
+            ]
         });
 
         if(!appointment){
@@ -174,13 +199,31 @@ const rescheduleAppointment = asyncHandler(async (req,res) => {
             return res.status(404).json({message:"paid appointment not found"});
         }
 
+        const selectedTime = appointment_time.slice(0, 5);
+        const selectedEndTime = calculateEndTime(selectedTime, appointment.service.duration);
+
+        const overlappingBookedSlot = await findOverlappingBookedSlot({
+            staffId,
+            appointment_date,
+            start_time: selectedTime,
+            end_time: selectedEndTime,
+            excludeAppointmentId: appointment.id,
+            transaction: t
+        });
+
+        if (overlappingBookedSlot) {
+            await t.rollback();
+            return res.status(409).json({message:"the slot overlaps with an existing booking"});
+        }
+
         const conflict = await Appointments.findOne({
 
             where: {
                 staffId: staffId,
                 appointment_date: appointment_date,
-                appointment_time: appointment_time,
+                appointment_time: selectedTime,
                 status: 'booked',
+                paymentStatus: 'paid',
                 id: {
                     [Op.ne]: appointmentId
                 }
@@ -194,9 +237,19 @@ const rescheduleAppointment = asyncHandler(async (req,res) => {
         
         appointment.staffId = staffId;
         appointment.appointment_date = appointment_date;
-        appointment.appointment_time = appointment_time;
+        appointment.appointment_time = selectedTime;
+        appointment.reminder_sent = false;
 
         await appointment.save({transaction : t});
+        await deleteBookedSlotByAppointmentId(appointment.id, t);
+        await createBookedSlot({
+            staffId,
+            appointmentId: appointment.id,
+            appointment_date,
+            start_time: selectedTime,
+            end_time: selectedEndTime,
+            transaction: t
+        });
         await t.commit();
 
         res.status(201).json({

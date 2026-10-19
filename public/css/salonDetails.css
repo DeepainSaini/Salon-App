@@ -73,6 +73,10 @@ form > div {
     width: 100%;
 }
 
+.time-label {
+    width: 50%;
+}
+
 /* Main action button */
 #submit-btn {
     width: 100%;

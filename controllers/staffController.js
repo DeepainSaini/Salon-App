@@ -5,6 +5,7 @@ const { Staff, Reviews, Appointments, Services, Users } = require('../models');
 const { sequelize } = require('../models');
 const asyncHandler = require('../util/asyncHandler');
 const { config } = require('../config/appConfig');
+const { getPagination, getPaginationMeta } = require('../util/pagination');
 
 const getStaffLoginPage = (req, res) => {
   res.sendFile(path.join(__dirname, '../', 'views', 'staffLogin.html'));
@@ -76,8 +77,9 @@ const getStaffAppointments = asyncHandler(async (req, res) => {
       });
   }
   const today = new Date().toISOString().slice(0, 10);
+  const { page, limit, offset } = getPagination(req.query);
 
-  const appointments = await Appointments.findAll({
+  const { count, rows: appointments } = await Appointments.findAndCountAll({
     where: {
       staffId: req.staff.id,
       paymentStatus: 'paid'
@@ -86,7 +88,10 @@ const getStaffAppointments = asyncHandler(async (req, res) => {
       { model: Services, as: 'service' },
       { model: Users, as: 'customer' }
     ],
-    order: [['appointment_date', 'ASC'], ['appointment_time', 'ASC']]
+    order: [['appointment_date', 'ASC'], ['appointment_time', 'ASC']],
+    limit,
+    offset,
+    distinct: true
   });
 
   const todayAppointments = [];
@@ -106,7 +111,8 @@ const getStaffAppointments = asyncHandler(async (req, res) => {
   res.status(200).json({
     todayAppointments,
     upcomingAppointments,
-    completedAppointments
+    completedAppointments,
+    pagination: getPaginationMeta(count, page, limit)
   });
 
 });
@@ -119,7 +125,9 @@ const getStaffReviews = asyncHandler(async (req, res) => {
           message: 'Please change your password first'
       });
   }
-  const reviews = await Reviews.findAll({
+  const { page, limit, offset } = getPagination(req.query);
+
+  const { count, rows: reviews } = await Reviews.findAndCountAll({
     include: [
       {
         model: Appointments,
@@ -135,11 +143,15 @@ const getStaffReviews = asyncHandler(async (req, res) => {
         ]
       }
     ],
-    order: [['createdAt', 'DESC']]
+    order: [['createdAt', 'DESC']],
+    limit,
+    offset,
+    distinct: true
   });
 
   res.status(200).json({
-    reviews
+    reviews,
+    pagination: getPaginationMeta(count, page, limit)
   });
 
 });

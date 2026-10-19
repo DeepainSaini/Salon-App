@@ -2,6 +2,7 @@ const path = require('path');
 const {Salons,Services} = require('../models');
 const { sequelize } = require('../models');
 const asyncHandler = require('../util/asyncHandler');
+const { deleteCacheByPattern } = require('../util/services/cacheServices');
 
 
 const getAddServiceForm =  (req,res) => {
@@ -51,6 +52,7 @@ const postAddedService = asyncHandler(async (req,res) => {
         }, { transaction: t });
 
         await t.commit();
+        await deleteCacheByPattern(`salon:${salon.id}:services:*`);
 
         res.status(201).json({
             message: "Service added successfully"
@@ -101,6 +103,7 @@ const changeServiceStatus = asyncHandler(async (req,res) => {
 
         await service.save({transaction : t});
         await t.commit();
+        await deleteCacheByPattern(`salon:${salon.id}:services:*`);
 
         res.status(200).json({
             message: "service status updated",

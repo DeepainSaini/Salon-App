@@ -45,6 +45,9 @@ const buildConfig = (env = process.env) => {
             appId: env.CASHFREE_APP_ID,
             secretKey: env.CASHFREE_SECRET_KEY,
             environment: env.CASHFREE_ENVIRONMENT || 'sandbox'
+        },
+        redis:{
+            url: env.REDIS_URL
         }
     };
 };

@@ -53,6 +53,15 @@ body {
     color: #1f2937;
 }
 
+.role-select {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #cccccc;
+    border-radius: 4px;
+    box-sizing: border-box;
+    background-color: #ffffff;
+}
+
 .form-group input:focus {
     outline: none;
     border-color: #4f46e5;

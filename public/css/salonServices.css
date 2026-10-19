@@ -74,6 +74,18 @@ button:hover {
     text-align: center;
 }
 
+.pagination-controls {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-top: 16px;
+}
+
+.pagination-controls button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
 @media (max-width: 600px) {
     .page-container {
         padding: 15px;

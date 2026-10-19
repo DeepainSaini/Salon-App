@@ -1,24 +1,44 @@
-window.addEventListener('DOMContentLoaded', async () => {
-    try {
-        const response = await axios.get('/admin/dashboard-data');
+let servicePage = 1;
+const serviceLimit = 10;
+let serviceTotalPages = 1;
 
-        const salon = response.data.salon;
-        const services = response.data.services;
-        const staff = response.data.staff;
-        const appointments = response.data.appointments;
+let staffPage = 1;
+const staffLimit = 10;
+let staffTotalPages = 1;
 
+let appointmentPage = 1;
+const appointmentLimit = 10;
+let appointmentTotalPages = 1;
 
+window.addEventListener('DOMContentLoaded', loadDashboardData);
 
-        showSalonDetails(salon);
-        showServices(services);
-        showStaff(staff);
-        showCustomers(appointments);
-        showAppointments(appointments)
+async function loadDashboardData() {
+  try {
+    const response = await axios.get(
+      `/admin/dashboard-data?servicePage=${servicePage}&serviceLimit=${serviceLimit}&staffPage=${staffPage}&staffLimit=${staffLimit}&appointmentPage=${appointmentPage}&appointmentLimit=${appointmentLimit}`
+    );
 
-    } catch (error) {
-        console.log("ERROR LOADING DASHBOARD ---> ", error);
-    }
-});
+    const salon = response.data.salon;
+    const services = response.data.services;
+    const staff = response.data.staff;
+    const appointments = response.data.appointments;
+
+    serviceTotalPages = response.data.servicePagination?.totalPages || 1;
+    staffTotalPages = response.data.staffPagination?.totalPages || 1;
+    appointmentTotalPages = response.data.appointmentPagination?.totalPages || 1;
+
+    showSalonDetails(salon);
+    showServices(services);
+    showStaff(staff);
+    showCustomers(appointments);
+    showAppointments(appointments);
+    showServicesPagination();
+    showStaffPagination();
+    showAppointmentsPagination();
+  } catch (error) {
+    console.log("ERROR LOADING DASHBOARD ---> ", error);
+  }
+}
 
 function showSalonDetails(salon) {
     const salonDetailsDiv = document.getElementById('salon-details');
@@ -47,18 +67,25 @@ function showServices(services) {
     services.forEach((service) => {
         const serviceDiv = document.createElement('div');
         serviceDiv.className = 'item-card';
-        console.log("Activity status",service);
 
         serviceDiv.innerHTML = `<h3> ${service.name} -- ${service.description} -- ${service.duration} -- ₹${service.price} </h3> 
         <p>
             <strong>Status:</strong> 
             ${service.is_active ? 'Active' : 'Inactive'}
         </p>
-        <button onclick="toggleServiceStatus(${service.id})">
+        <button class="toggle-service-status-btn" data-service-id="${service.id}">
             ${service.is_active ? 'Deactivate' : 'Activate'}
         </button>
         
-        <button onclick="editService(${service.id})">Edit</button>`;
+        <button class="edit-service-btn" data-service-id="${service.id}">Edit</button>`;
+
+        serviceDiv.querySelector('.toggle-service-status-btn').addEventListener('click', () => {
+            toggleServiceStatus(service.id);
+        });
+
+        serviceDiv.querySelector('.edit-service-btn').addEventListener('click', () => {
+            editService(service.id);
+        });
 
         servicesListDiv.appendChild(serviceDiv);
     });
@@ -91,10 +118,14 @@ function showStaff(staffList) {
             <p><strong>Available:</strong> ${staff.available_from} - ${staff.available_to}</p>
             <p><strong>Status:</strong> ${staff.is_active ? 'Active' : 'Inactive'}</p>
 
-            <button onclick="toggleStaffStatus(${staff.id})">
+            <button class="toggle-staff-status-btn" data-staff-id="${staff.id}">
                 ${staff.is_active ? 'Deactivate' : 'Activate'}
             </button>
         `;
+
+        staffDiv.querySelector('.toggle-staff-status-btn').addEventListener('click', () => {
+            toggleStaffStatus(staff.id);
+        });
 
         staffListDiv.appendChild(staffDiv);
     });
@@ -195,10 +226,14 @@ function showCustomers(appointments) {
       <p><strong>Total Appointments:</strong> ${customer.totalAppointments}</p>
       <p><strong>Completed:</strong> ${customer.completedAppointments}</p>
       <p><strong>Cancelled:</strong> ${customer.cancelledAppointments}</p>
-      <button onclick="viewCustomerDetails(${customer.id})">
+      <button class="view-customer-details-btn" data-customer-id="${customer.id}">
         View Details
       </button>
     `;
+
+    div.querySelector('.view-customer-details-btn').addEventListener('click', () => {
+      viewCustomerDetails(customer.id);
+    });
 
     customersList.appendChild(div);
   });
@@ -281,15 +316,15 @@ function renderAdminAppointments(appointments, container) {
 
     if (appointment.status === 'booked') {
       action = `
-        <button onclick="markCompleted(${appointment.id})">
+        <button class="mark-completed-btn" data-appointment-id="${appointment.id}">
           Mark Completed
         </button>
 
-        <button onclick="cancelAppointmentByAdmin(${appointment.id})">
+        <button class="admin-cancel-appointment-btn" data-appointment-id="${appointment.id}">
           Cancel Appointment
         </button>
 
-       <button onclick="editAppointment(${appointment.id})">
+       <button class="edit-appointment-btn" data-appointment-id="${appointment.id}">
           Edit Appointment
        </button>
       `;
@@ -322,6 +357,27 @@ function renderAdminAppointments(appointments, container) {
       ${action}
       ${reviewContent}
     `;
+
+    const markCompletedBtn = div.querySelector('.mark-completed-btn');
+    if (markCompletedBtn) {
+      markCompletedBtn.addEventListener('click', () => {
+        markCompleted(appointment.id);
+      });
+    }
+
+    const cancelAppointmentBtn = div.querySelector('.admin-cancel-appointment-btn');
+    if (cancelAppointmentBtn) {
+      cancelAppointmentBtn.addEventListener('click', () => {
+        cancelAppointmentByAdmin(appointment.id);
+      });
+    }
+
+    const editAppointmentBtn = div.querySelector('.edit-appointment-btn');
+    if (editAppointmentBtn) {
+      editAppointmentBtn.addEventListener('click', () => {
+        editAppointment(appointment.id);
+      });
+    }
 
     container.appendChild(div);
   });
@@ -405,3 +461,81 @@ document.getElementById('logout-btn').addEventListener('click', async (event) =>
         console.log('LOGOUT ERROR --->', error);
     }
 });
+
+function showServicesPagination() {
+  const paginationDiv = document.getElementById('services-pagination');
+
+  if (!paginationDiv) return;
+
+  paginationDiv.innerHTML = `
+    <button id="services-prev-page" ${servicePage === 1 ? 'disabled' : ''}>Previous</button>
+    <span>Page ${servicePage} of ${serviceTotalPages || 1}</span>
+    <button id="services-next-page" ${servicePage >= serviceTotalPages ? 'disabled' : ''}>Next</button>
+  `;
+
+  document.getElementById('services-prev-page').addEventListener('click', () => {
+    if (servicePage > 1) {
+      servicePage--;
+      loadDashboardData();
+    }
+  });
+
+  document.getElementById('services-next-page').addEventListener('click', () => {
+    if (servicePage < serviceTotalPages) {
+      servicePage++;
+      loadDashboardData();
+    }
+  });
+}
+
+function showStaffPagination() {
+  const paginationDiv = document.getElementById('staff-pagination');
+
+  if (!paginationDiv) return;
+
+  paginationDiv.innerHTML = `
+    <button id="staff-prev-page" ${staffPage === 1 ? 'disabled' : ''}>Previous</button>
+    <span>Page ${staffPage} of ${staffTotalPages || 1}</span>
+    <button id="staff-next-page" ${staffPage >= staffTotalPages ? 'disabled' : ''}>Next</button>
+  `;
+
+  document.getElementById('staff-prev-page').addEventListener('click', () => {
+    if (staffPage > 1) {
+      staffPage--;
+      loadDashboardData();
+    }
+  });
+
+  document.getElementById('staff-next-page').addEventListener('click', () => {
+    if (staffPage < staffTotalPages) {
+      staffPage++;
+      loadDashboardData();
+    }
+  });
+}
+
+function showAppointmentsPagination() {
+  const paginationDiv = document.getElementById('appointments-pagination');
+
+  if (!paginationDiv) return;
+
+  paginationDiv.innerHTML = `
+    <button id="appointments-prev-page" ${appointmentPage === 1 ? 'disabled' : ''}>Previous</button>
+    <span>Page ${appointmentPage} of ${appointmentTotalPages || 1}</span>
+    <button id="appointments-next-page" ${appointmentPage >= appointmentTotalPages ? 'disabled' : ''}>Next</button>
+  `;
+
+  document.getElementById('appointments-prev-page').addEventListener('click', () => {
+    if (appointmentPage > 1) {
+      appointmentPage--;
+      loadDashboardData();
+    }
+  });
+
+  document.getElementById('appointments-next-page').addEventListener('click', () => {
+    if (appointmentPage < appointmentTotalPages) {
+      appointmentPage++;
+      loadDashboardData();
+    }
+  });
+}

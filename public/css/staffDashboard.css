@@ -111,3 +111,24 @@ body {
 .empty-message {
   color: #666;
 }
+
+.pagination-controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 14px;
+}
+
+.pagination-controls button {
+  padding: 8px 12px;
+  border: none;
+  border-radius: 5px;
+  background-color: #222;
+  color: #ffffff;
+  cursor: pointer;
+}
+
+.pagination-controls button:disabled {
+  background-color: #b8b8b8;
+  cursor: not-allowed;
+}
